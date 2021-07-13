@@ -29,11 +29,11 @@ OPTIONAL
 Example
   volcano_funcxn(file_name='results/test.pval_w_hgnc.csv',
              coeff='coeff1',
-             fdr='0.05', n_top_gene=15,
+             fdr='0.05', n_top_gene=15,mod_gene='gene',
              out_dir='./')
 "
 # All the libraries
-volcano_funcxn <- function(file_name, coeff = "all",fdr = 0.2, n_top_gene = 10, out_dir = "./") {
+volcano_funcxn <- function(file_name, coeff = "all",fdr = 0.2, n_top_gene = 10,mod_gene = "gene", out_dir = "./") {
   for (package in c('tidyverse', 'ggplot2', 'ggrepel')) {
     if (!require(package, character.only=T, quietly=T)) {
       install.packages(package)
@@ -49,7 +49,8 @@ volcano_funcxn <- function(file_name, coeff = "all",fdr = 0.2, n_top_gene = 10, 
   }
   else {
   }
-  # running for loop for each given coefficient
+  if(mod_gene == "gene"){
+    # running for loop for each given coefficient
   for (i in coeff) {
     pval_coef <- subset(p_val, group == i)
     # getting all hgnc symbol for up regulated genes
@@ -77,4 +78,35 @@ volcano_funcxn <- function(file_name, coeff = "all",fdr = 0.2, n_top_gene = 10, 
       geom_hline(yintercept= 0, col="black")
     ggsave(paste(out_dir,i,"_volcano_plot.pdf"))
   }
-}
+  }
+    else {
+      for (i in coeff) {
+        pval_coef <- subset(p_val, group == i)
+        # getting all hgnc symbol for up regulated genes
+        up_reg <-  head(subset(pval_coef, FC.group == "up" & adj.P.Val < fdr) %>% arrange(adj.P.Val), n_top_gene) %>% 
+          mutate(delabel = geneName) %>%  
+          select(geneName, delabel)
+        # getting all hgnc symbol for down regulated genes
+        down_reg <-  head(subset(pval_coef, FC.group == "down" & adj.P.Val < fdr) %>% arrange(adj.P.Val), n_top_gene) %>% 
+          mutate(delabel = geneName) %>%  
+          select(geneName, delabel)
+        # making the dataframe to plot
+        pval_plot <- left_join(pval_coef,down_reg, by="geneName") %>% 
+          left_join(.,up_reg,by="geneName") %>% 
+          mutate(delabel = coalesce(delabel.x,delabel.y)) %>% 
+          mutate(FC.group = case_when(is.na(delabel) == FALSE ~ FC.group,
+                                      is.na(delabel) == TRUE ~ "No"))
+        cols <- c("up"="red","down"="blue","No"="black")
+        # running ggplot to make volcano plot
+        plt_vol<-ggplot(data=pval_plot, aes(x=logFC, y=-log10(adj.P.Val), col=FC.group, label=delabel)) +
+          geom_point() + 
+          theme_minimal() +
+          geom_text_repel() +
+          scale_color_manual(values=cols) +
+          geom_vline(xintercept=0, col="black") +
+          geom_hline(yintercept= 0, col="black")
+        ggsave(paste(out_dir,i,"_volcano_plot.pdf"))
+    }
+  }
+  }
+
