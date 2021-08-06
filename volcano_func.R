@@ -43,6 +43,7 @@ volcano_funcxn <- function(file_name, coeff = "all",fdr = 0.2, n_top_gene = 10,m
   options(ggrepel.max.overlaps = Inf)
   # Read in file generated from extract pvalue function for model of interest 
   p_val <- read_csv(file_name) %>% arrange(adj.P.Val)
+  dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
   # If you want to run function for all coefficients
   if(coeff == "all") {
     coeff <- unique(p_val$group)
