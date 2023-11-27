@@ -109,8 +109,9 @@ GAM_loop <- function(voom_object=NULL,module_dat_w_meta = NULL,gam_formula=NULL)
     #mutate(AIC_metric = AIC(gmt)) %>% mutate(BIC_metric = BIC(gmt)))
     gmt_list_summary[[ens_gene]] <- gmt_summ
     gmt_list[[ens_gene]] <- gmt},
-    error = function(e) {an.error.occured <<- ens_gene})
-    failed_gene_list <- append(failed_gene_list,an.error.occured)
+    error = function(e) {an.error.occured <<- ens_gene
+    failed_gene_list <- append(failed_gene_list,an.error.occured)})
+    #failed_gene_list <- append(failed_gene_list,an.error.occured)
     #print(paste("Running gene",ens_gene,":",x,"of",n_iter))
     
     setTxtProgressBar(pb, x)
