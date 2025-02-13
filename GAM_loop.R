@@ -1,4 +1,4 @@
-# Running GAM loop 
+# Running GAM loop: Older version should not be used
 # Author: Basilin Benson, bbenson@benaroyaresearch.org
 # Started Oct 2023
 #
