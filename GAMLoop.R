@@ -1,39 +1,86 @@
-# Running GAM loop 
-# Author: Basilin Benson, bbenson@benaroyaresearch.org
-# 
-#
-
-# © Basilin Benson 2024
-# License: This software is licensed under GNU General Public License, and may
-# be modified and/or redistributed under GNU GPL version 3 or later. License details
-# can be found in the accompanying this script, or at  (http://www.gnu.org/licenses/).
-#
-
-
-# DESCRIPTION:
-# Contains function run GAM looping through either modules or gene
-
 # ----------------------------------------
 # Generalized Additive Model (GAM) Loop
 # ----------------------------------------
-# This function fits a GAM model to each gene/module in the dataset
-# and extracts key statistical outputs for further analysis.
+# Author: Basilin Benson  <bbenson@benaroyaresearch.org>
+# License: GNU General Public License (GPL v3 or later)
+# © Basilin Benson 2024
+# 
+# This software is licensed under the GNU General Public License. You may modify 
+# and/or redistribute it under GPL version 3 or later. For license details, visit:
+# https://www.gnu.org/licenses/gpl-3.0.html
 #
-# Inputs:
-#   - voomObject: (optional) A voom-transformed object containing gene expression data.
-#   - moduleDatwMeta: (optional) A data frame with gene/module data and metadata.
-#   - gamFormula: A string specifying the GAM formula (e.g., "~ s(Time, bs='cs')").
+# DESCRIPTION:
+# This function loops over gene-level or module-level expression data and fits 
+# a Generalized Additive Model (GAM) to each gene/module using the provided formula.
+# It supports flexible output options including fixed effects, smooth effects, 
+# model summaries, and the fitted model objects themselves. Failed model fits 
+# are tracked and reported.
 #
-# Outputs:
-#   - `Fixed Effects`: Data frame with fixed-effect p-values and adjusted FDR.
-#   - `Smooth Effects`: Data frame with smooth-effect p-values and adjusted FDR.
-#   - `Gene Model Summary`: List of GAM model summaries for each gene.
-#   - `Model Object`: List of fitted GAM models.
-#   - `Failed Gene List`: Vector of genes that failed model fitting.
-#   - `ExecutionTime`: Time taken to run the function.
+# This function is useful for modeling longitudinal gene expression or 
+# module-level summaries in time-course or repeated-measures designs.
+#
+# PARAMETERS:
+#   - voomObject: 
+#       A voom-transformed object (from limma) containing the expression matrix (E) 
+#       and associated metadata in `targets`. Used when moduleDatwMeta is not provided.
+#
+#   - moduleDatwMeta: 
+#       A data frame containing module-level expression data and metadata.
+#       If provided, the function will use this instead of voomObject.
+#
+#   - gamFormula: 
+#       A string containing the formula to be passed to mgcv::gam.
+#       Example: "~ s(Time, bs = 'cs') + donorId"
+#
+#   - returnFixedEffects: 
+#       Logical. If TRUE, returns a data frame of p-values and FDR for fixed effects.
+#
+#   - returnSmoothEffects: 
+#       Logical. If TRUE, returns a data frame of p-values and FDR for smooth terms.
+#
+#   - returnGeneModelSummary: 
+#       Logical. If TRUE, returns a named list of GAM summary objects for each gene/module.
+#
+#   - returnModelObject: 
+#       Logical. If TRUE, returns a named list of fitted GAM model objects.
+#
+# RETURNS:
+# A named list containing:
+#   - FixedEffects: 
+#       Data frame of fixed-effect terms and FDR values (if returnFixedEffects = TRUE).
+#
+#   - SmoothEffects: 
+#       Data frame of smooth-effect terms and FDR values (if returnSmoothEffects = TRUE).
+#
+#   - GeneModelSummary: 
+#       List of GAM summary objects for each gene/module (if returnGeneModelSummary = TRUE).
+#
+#   - ModelObject: 
+#       List of fitted GAM model objects (if returnModelObject = TRUE).
+#
+#   - FailedGeneList: 
+#       Character vector of genes or modules that failed model fitting.
+#
+#   - ExecutionTime: 
+#       The total time taken to complete the GAM fitting loop.
+#
+# EXAMPLE USAGE:
+#   gamResults <- GAMLoop(
+#     voomObject = v, 
+#     gamFormula = "~ s(Timepoint, bs = 'cs') + Treatment + donorId",
+#     returnFixedEffects = TRUE,
+#     returnSmoothEffects = TRUE,
+#     returnGeneModelSummary = TRUE, 
+#     returnModelObject = TRUE
+#   )
 
 
-GAMLoop <- function(voomObject = NULL, moduleDatwMeta = NULL, gamFormula = NULL) {
+
+GAMLoop <- function(voomObject = NULL, moduleDatwMeta = NULL, gamFormula = NULL, 
+                    returnFixedEffects = TRUE, 
+                    returnSmoothEffects = TRUE, 
+                    returnGeneModelSummary = TRUE, 
+                    returnModelObject = TRUE) {
   # Load required packages
   require(tidyverse, quietly = TRUE)  # For data wrangling
   require(mgcv, quietly = TRUE)       # For GAM modeling
@@ -43,107 +90,108 @@ GAMLoop <- function(voomObject = NULL, moduleDatwMeta = NULL, gamFormula = NULL)
   
   # Determine which dataset to use: module-level or gene-level
   if (!is.null(moduleDatwMeta)) {
-    # If a module data matrix is provided, use it
     datTemp <- moduleDatwMeta
-    geneNames <- colnames(datTemp %>% select(starts_with("module")))  # Extract module names
+    geneNames <- colnames(datTemp %>% select(starts_with("module")))
   } else {
-    # Otherwise, process gene expression data from voomObject
-    voomObject$targets <- voomObject$targets %>% mutate(donorId = as.factor(donorId))  # Ensure donor ID is a factor
+    voomObject$targets <- voomObject$targets %>% mutate(donorId = as.factor(donorId))
     datTemp <- voomObject$E %>% t() %>% as.data.frame() %>%
-      rownames_to_column("libid") %>% left_join(voomObject$targets, by = "libid")  # Merge metadata
-    geneNames <- rownames(voomObject$E)  # Get gene names from the expression matrix
+      rownames_to_column("libid") %>% left_join(voomObject$targets, by = "libid")
+    geneNames <- rownames(voomObject$E)
   }
   
-  # Initialize a progress bar to track computation progress
+  # Initialize progress bar
   nIter <- length(geneNames)
   pb <- txtProgressBar(min = 1, max = nIter, style = 3, width = 50, char = "=")
   
-  # Initialize preallocated memory lists for outputs
-  gmtPTableList <- vector("list", nIter)  # Stores p-values for fixed effects
-  gmtSTableList <- vector("list", nIter)  # Stores p-values for smooth terms
-  gmtSummaryList <- vector("list", nIter) # Stores full model summaries
-  gmtModelList <- vector("list", nIter)   # Stores full GAM model objects
-  failedGenes <- c()       # Track genes that fail during model fitting
-  processedGenes <- c()    # Track genes that are successfully processed
+  # Preallocate lists only if needed
+  gmtPTableList <- if (returnFixedEffects) vector("list", nIter) else NULL
+  gmtSTableList <- if (returnSmoothEffects) vector("list", nIter) else NULL
+  gmtSummaryList <- if (returnGeneModelSummary) vector("list", nIter) else NULL
+  gmtModelList <- if (returnModelObject) vector("list", nIter) else NULL
+  failedGenes <- c()  # Always track failed genes
   
-  gamForm <- gamFormula  # Store the GAM formula passed by the user
+  gamForm <- gamFormula  
   
-  # Loop through each gene and fit a GAM model
+  # Loop through each gene and fit a GAM model if required
   for (i in seq_along(geneNames)) {
-    ensGene <- geneNames[i]  # Get the gene/module name
-    # Construct the GAM formula dynamically
+    ensGene <- geneNames[i]
     formulaGam <- as.formula(paste(ensGene, gamForm))  
     
     tryCatch({
-      # Fit the GAM model
       gmt <- mgcv::gam(formulaGam, data = datTemp)
-      gmtSummary <- summary(gmt)  # Get model summary
       
-      # Extract and store p-values for fixed effects
-      gmtPTableList[[ensGene]] <- gmtSummary$p.table %>%
-        as.data.frame() %>% rownames_to_column("variable") %>%
-        mutate(geneName = ensGene)
+      if (returnFixedEffects) {
+        gmtSummary <- summary(gmt)  
+        gmtPTableList[[i]] <- gmtSummary$p.table %>%
+          as.data.frame() %>% rownames_to_column("variable") %>%
+          mutate(geneName = ensGene)
+      }
       
-      # Extract and store p-values for smooth terms
-      gmtSTableList[[ensGene]] <- gmtSummary$s.table %>%
-        as.data.frame() %>% rownames_to_column("variable") %>%
-        mutate(geneName = ensGene)
+      if (returnSmoothEffects) {
+        gmtSummary <- summary(gmt)  
+        gmtSTableList[[i]] <- gmtSummary$s.table %>%
+          as.data.frame() %>% rownames_to_column("variable") %>%
+          mutate(geneName = ensGene)
+      }
       
-      # Store the full model summary and model object
-      gmtSummaryList[[i]] <- gmtSummary
-      gmtModelList[[i]] <- gmt  
+      if (returnGeneModelSummary) {
+        gmtSummaryList[[i]] <- summary(gmt)
+      }
       
-      # Add successfully processed gene to the tracking list
-      processedGenes <- c(processedGenes, ensGene)  
+      if (returnModelObject) {
+        gmtModelList[[i]] <- gmt
+      }
       
     }, error = function(e) {
-      # If an error occurs, add the gene to the failed list
-      failedGenes <<- append(failedGenes, ensGene)  
-      return(NULL)
+      failedGenes <<- append(failedGenes, ensGene)  # Always track failed genes
     })
     
-    # Update progress bar
     setTxtProgressBar(pb, i)
   }
   
-  close(pb)  # Close progress bar
+  close(pb)  
   
   
   # Remove NULL entries from lists before binding
-  gmtSummaryList <- gmtSummaryList[!sapply(gmtSummaryList, is.null)]
-  gmtModelList <- gmtModelList[!sapply(gmtModelList, is.null)]
+  gmtSummaryList <- if (returnGeneModelSummary) gmtSummaryList[!sapply(gmtSummaryList, is.null)] else NULL
+  gmtModelList <- if (returnModelObject) gmtModelList[!sapply(gmtModelList, is.null)] else NULL
   
-  # Convert stored p-value lists into data frames
-  gmtDatPTable <- data.table::rbindlist(gmtPTableList, fill = TRUE)
-  gmtDatSTable <- data.table::rbindlist(gmtSTableList, fill = TRUE)
+  # Convert stored lists into data frames if required
+  gmtDatPTable <- if (returnFixedEffects) data.table::rbindlist(gmtPTableList, fill = TRUE) else NULL
+  gmtDatSTable <- if (returnSmoothEffects) data.table::rbindlist(gmtSTableList, fill = TRUE) else NULL
   
-  # Adjust p-values for multiple comparisons using the Benjamini-Hochberg (BH) method
-  gmtDatPTable <- gmtDatPTable %>%
-    group_by(variable) %>%
-    mutate(FDR = p.adjust(`Pr(>|t|)`, method = "BH")) %>%
-    arrange(FDR)
+  # Adjust p-values if required
+  if (returnFixedEffects) {
+    gmtDatPTable <- gmtDatPTable %>%
+      group_by(variable) %>%
+      mutate(FDR = p.adjust(`Pr(>|t|)`, method = "BH")) %>%
+      arrange(FDR)
+  }
   
-  gmtDatSTable <- gmtDatSTable %>%
-    group_by(variable) %>%
-    mutate(FDR = p.adjust(`p-value`, method = "BH")) %>%
-    arrange(FDR)
+  if (returnSmoothEffects) {
+    gmtDatSTable <- gmtDatSTable %>%
+      group_by(variable) %>%
+      mutate(FDR = p.adjust(`p-value`, method = "BH")) %>%
+      arrange(FDR)
+  }
   
   # Assign names only to successfully processed genes
-  names(gmtSummaryList) <- processedGenes
-  names(gmtModelList) <- processedGenes
+  if (returnGeneModelSummary) names(gmtSummaryList) <- geneNames[seq_along(gmtSummaryList)]
+  if (returnModelObject) names(gmtModelList) <- geneNames[seq_along(gmtModelList)]
   
   # Calculate total execution time
   endTime <- Sys.time()
   executionTime <- endTime - startTime
   
-  # Return a structured list containing all results
-  return(list(
-    `FixedEffects` = gmtDatPTable,   # Processed fixed effects results
-    `SmoothEffects` = gmtDatSTable,  # Processed smooth effects results
-    `GeneModelSummary` = gmtSummaryList,  # Full model summaries
-    `ModelObject` = gmtModelList,    # Fitted model objects
-    `FailedGeneList` = failedGenes,  # List of genes that failed to fit
-    `ExecutionTime` = executionTime  # Total time taken
-  ))
+  # Create the output list based on selected options
+  results <- list(
+    `FailedGeneList` = failedGenes,  # Always return failed genes
+    `ExecutionTime` = executionTime  # Always return execution time
+  )
+  if (returnFixedEffects) results[["FixedEffects"]] <- gmtDatPTable
+  if (returnSmoothEffects) results[["SmoothEffects"]] <- gmtDatSTable
+  if (returnGeneModelSummary) results[["GeneModelSummary"]] <- gmtSummaryList
+  if (returnModelObject) results[["ModelObject"]] <- gmtModelList
+  
+  return(results)
 }
-
