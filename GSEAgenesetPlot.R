@@ -56,7 +56,7 @@ GSEAgenesetPlot <- function(FC_list, geneset_db = "H", geneset_name,
   ranks <- sort(FC_list, decreasing = TRUE)
   
   # Run enrichment plot
-  plt_enrich <- plotEnrichment(temp_gmt[[geneset_name]], ranks) + 
+  plt_enrich <- fgsea::plotEnrichment(temp_gmt[[geneset_name]], ranks) + 
     labs(title = str_to_title(gsub("_"," ",geneset_name))) +xlab("Rank") + ylab("Enrichment Score")
   
   # If a gene is highlighted, find its rank and add annotation
