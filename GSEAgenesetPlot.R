@@ -42,9 +42,12 @@
 GSEAgenesetPlot <- function(FC_list, geneset_db = "H", geneset_name, 
                               right_label = "Upregulated", left_label = "Downregulated", 
                               highlight_gene = NULL,right_label_col = "red",left_label_col="blue") {
-  
+  require(ggplot2)
+  require(msigdbr)
+  require(fgsea)
+  require(dplyr)
   # Load the gene set database using msigdbr
-  temp_gmt <- msigdbr(species = "Homo sapiens", category = geneset_db) %>%
+  temp_gmt <- msigdbr::msigdbr(species = "Homo sapiens", category = geneset_db) %>%
     split(.$gs_name ) %>% 
     lapply(function(x) x$gene_symbol)
   
