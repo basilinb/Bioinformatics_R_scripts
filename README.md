@@ -128,12 +128,3 @@ print(plt)
 Some files include GPL headers (GPL v3 or later) and some code includes attribution (e.g., GSEA scripts credited to Kim Dill-McFarland, 2020). If you plan to redistribute this repository as a single bundled work, consider adding a top-level `LICENSE` file and ensuring the licensing/attribution across scripts is consistent.
 
 ---
-
-## Contributing
-
-Issues and PRs welcome. If you’re adding a new function, please:
-- include a brief header with purpose + inputs/outputs
-- add it to the “Contents” section in this README
-- (optional) add a minimal reproducible example in the README or as an `.Rmd`/notebook
-
----
