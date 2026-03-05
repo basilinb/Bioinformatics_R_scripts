@@ -1,50 +1,59 @@
-
-runLmerLoop <- function(expressionDatawMeta, lmerformula=NULL,nameCol = NULL,expCol=NULL) {
+runLmerLoop <- function(expressionDatawMeta, lmerformula = NULL, nameCol = NULL, expCol = NULL, use_lmer = TRUE) {
   require(lmerTest, quietly = TRUE)
   require(dplyr, quietly = TRUE)
   require(tibble, quietly = TRUE)
   
-  # Error handling: Ensure formula and colName are provided
-  if (is.null(formula) && is.null(nameCol) && is.null(expCol)) {
+  # Error handling: Ensure formula and column names are provided
+  if (is.null(lmerformula) && is.null(nameCol) && is.null(expCol)) {
     stop("Error: Please provide both an lmer formula and a gene/module column name.")
   }
-  if (is.null(formula)) {
+  if (is.null(lmerformula)) {
     stop("Error: Please provide an lmer formula.")
   }
   if (is.null(nameCol)) {
     stop("Error: Please provide a gene/module column name.")
   }
-  
   if (is.null(expCol)) {
     stop("Error: Please provide a gene/module expression column name.")
   }
 
-  
   # Extract unique module names
   varNames <- unique(expressionDatawMeta[[nameCol]])
   
   # Preallocate list to store results
   resultsList <- vector("list", length(varNames))
+  modelObjList <- list()
   
   # Initialize progress bar
   pb <- txtProgressBar(min = 1, max = length(varNames), style = 3, width = 50, char = "=")
   
-  # Loop through each module and fit the LMER model
+  # Loop through each module and fit the model
   for (i in seq_along(varNames)) {
     varName <- varNames[i]
     
     # Define formula dynamically
     formula <- as.formula(paste0(expCol, lmerformula))
     
-    # Fit the mixed effects model
+    # Subset data for the current module
     dat_sub <- expressionDatawMeta %>% subset(get(nameCol) == varName)
-    modelSummary <- summary(lmerTest::lmer(formula, data = dat_sub))
+    
+    # Fit the model (lmer or lm based on use_lmer)
+    if (use_lmer) {
+      model <- lmerTest::lmer(formula, data = dat_sub)
+    } else {
+      model <- lm(formula, data = dat_sub)
+    }
+    
+    modelSummary <- summary(model)
     
     # Extract coefficient table and format output
     resultsList[[i]] <- modelSummary$coefficients %>%
       as.data.frame() %>%
       rownames_to_column("variable") %>%
       mutate(gene = varName)
+
+    # Extract model object for potential further analysis
+    modelObjList[[varName]] <- model  
     
     # Update progress bar
     setTxtProgressBar(pb, i)
@@ -54,11 +63,14 @@ runLmerLoop <- function(expressionDatawMeta, lmerformula=NULL,nameCol = NULL,exp
   
   # Combine all results into a single data frame
   resultsDf <- bind_rows(resultsList)
-  #Run multiple testing correction
-  resultsDf <- resultsDf %>% rename("pval" = "Pr(>|t|)","estimate"="Estimate") %>%
+  
+  # Run multiple testing correction
+  resultsDf <- resultsDf %>% 
+    rename("pval" = "Pr(>|t|)", "estimate" = "Estimate") %>%
     group_by(variable) %>%
     mutate(FDR = stats::p.adjust(pval, method = "BH")) %>%
     arrange(FDR)
   
-  return(resultsDf)
+  return_objects <- list("resultsDf" = resultsDf, "modelObjList" = modelObjList)
+  return(return_objects)
 }

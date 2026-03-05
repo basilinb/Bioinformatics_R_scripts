@@ -17,7 +17,7 @@ vizGO <- function(gsea_result,
   # Progress tracking
   require(msigdbr, quietly = TRUE)
   
-  db.format <- msigdbr::msigdbr("human", "C5") %>% select(gs_name,gs_exact_source) %>% rename(pathway = gs_name)
+  db.format <- msigdbr::msigdbr(species ="human", collection ="C5") %>% select(gs_name,gs_exact_source) %>% rename(pathway = gs_name)
 
   
   if(str_detect(variable_of_interest,"all") %>% unique()) {

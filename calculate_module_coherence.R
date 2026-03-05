@@ -37,7 +37,7 @@ calculate_module_coherence<-
     # for each geneset pull corresponding gene indices and compute means
     for (i in uniGS){
       curGS<-i
-      curIDs<-as.character(moduleSets[which(moduleSets[, mods_var]==curGS), gene_var])
+      curIDs<-moduleSets[which(moduleSets[, mods_var]==curGS), gene_var] %>% pull(geneName)
       
       matchIndex<-match(curIDs, rownames(voomData))
       if (any(is.na(matchIndex))){
@@ -69,7 +69,7 @@ calculate_module_coherence<-
     
     
     # remove gene sets that are zero
-    if(!is.null(remove_mods)){uniGS<-uniGS[-which(uniGS %in% remove_mods)]}
+    #if(!is.null(remove_mods)){uniGS<-uniGS[-which(uniGS %in% remove_mods)]}
     
     # Setup storage
     SubGeneCorDF<-list()
@@ -79,7 +79,7 @@ calculate_module_coherence<-
     # for each geneset pull the correct gene IDs and indices, calculate correlation matrices, and format results.
     for (i in uniGS){
       curGS<-i
-      curIDs<-as.character(moduleSets[which(moduleSets[, mods_var]==curGS), gene_var])
+      curIDs<-moduleSets[which(moduleSets[, mods_var]==curGS), gene_var] %>% pull(geneName)
       matchIndex<-match(curIDs, rownames(voomData))
       if (any(is.na(matchIndex))){
         matchIndex<-matchIndex[-which(is.na(matchIndex))]}
