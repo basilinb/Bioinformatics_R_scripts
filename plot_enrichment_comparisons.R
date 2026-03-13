@@ -48,23 +48,29 @@ plot_enrichment_comparisons <- function(df, comparisons, fdr_cutoff = 0.05) {
 
   # ---- build plotting dataframe -------------------------------------------
   # For each named comparison, keep significant rows for each of the two groups
-  plot_df <- imap_dfr(comparisons, function(groups, comp_name) {
-    if (length(groups) < 2) {
-      stop("Comparison '", comp_name, "' must contain two group names.")
-    }
+  plot_df <- lapply(names(comparisons), function(comp_name) {
+    groups <- comparisons[[comp_name]]
+
     g1 <- groups[1]
     g2 <- groups[2]
 
-    df %>%
-      filter(FDR <= fdr_cutoff & (group == g1 | group == g2)) %>%
-      # label which comparison this row belongs to and the "direction" using the exact group name
+    g1_df <- df %>%
+      filter(group == g1, FDR <= fdr_cutoff) %>%
       mutate(
         comparison = comp_name,
-        direction = group
-      ) %>%
-      # keep only rows for the two groups (defensive; already filtered)
-      filter(group %in% c(g1, g2))
-  })
+        direction = "Up in Group 1"
+      )
+
+    g2_df <- df %>%
+      filter(group == g2, FDR <= fdr_cutoff) %>%
+      mutate(
+        comparison = comp_name,
+        direction = "Down in Group 1"
+      )
+
+    bind_rows(g1_df, g2_df)
+  }) %>%
+    bind_rows()
 
   if (nrow(plot_df) == 0) {
     stop(
@@ -88,28 +94,36 @@ plot_enrichment_comparisons <- function(df, comparisons, fdr_cutoff = 0.05) {
     plot_df,
     aes(x = comparison, y = pathway, size = size_metric, shape = direction)
   ) +
-    geom_point(
-      aes(color = direction, fill = direction),
-      alpha = 0.6,
-      stroke = 0.5
-    ) +
-    # use filled shapes so color+fill both work well
+    geom_point(aes(color = direction, fill = direction), alpha = 0.5) +
     scale_shape_manual(
-      values = set_names(c(21, 22, 23, 24, 25), nm = unique(plot_df$direction))
+      values = c(
+        "Up in Group 1" = 24, # upward triangle
+        "Down in Group 1" = 25 # downward triangle
+      )
     ) +
-    scale_size(range = c(3, 9), guide = "legend") +
+    scale_color_manual(
+      values = c(
+        "Up in Group 1" = "darkred",
+        "Down in Group 1" = "darkblue"
+      )
+    ) +
+    scale_fill_manual(
+      values = c(
+        "Up in Group 1" = "darkred",
+        "Down in Group 1" = "darkblue"
+      )
+    ) +
+    scale_size(range = c(3, 10)) +
     theme_bw() +
     theme(
-      axis.text.x = element_text(angle = 45, hjust = 1),
-      axis.text.y = element_text(size = 9)
+      axis.text.y = element_text(size = 10),
+      axis.text.x = element_text(angle = 45, hjust = 1)
     ) +
     labs(
       x = "Comparison",
       y = "Pathway",
       size = "k/K",
-      shape = "Group (direction)",
-      color = "Group (direction)",
-      fill = "Group (direction)"
+      shape = "Direction"
     )
 
   p
