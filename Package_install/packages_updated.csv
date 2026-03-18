@@ -1,0 +1,633 @@
+package,category,source,description
+abind,Data wrangling utilities,CRAN,Combine multi-dimensional arrays
+admisc,Miscellaneous utilities,CRAN,Miscellaneous functions for QCA and other methods
+airr,Immune & clinical data,CRAN,AIRR-compliant immune repertoire data I/O
+aplot,Visualisation (other),CRAN,Arrange ggplot2 plots with associated panels
+askpass,Miscellaneous utilities,CRAN,Password input for credentials
+assertthat,Miscellaneous utilities,CRAN,User-friendly assertions
+audio,Miscellaneous utilities,CRAN,Audio playback and recording
+babelgene,Genomic ranges & annotation,CRAN,Gene ID/symbol conversion across species
+backports,Miscellaneous utilities,CRAN,Backports of newer R functions to older R
+base64,Miscellaneous utilities,CRAN,Another base64 utility
+base64enc,Miscellaneous utilities,CRAN,Base64 encoding/decoding
+bayesbio,Bayesian & MCMC,CRAN,Miscellaneous Bayesian/bioinformatics functions
+beanplot,Visualisation (other),CRAN,Bean plots as alternative to boxplots
+beepr,Miscellaneous utilities,CRAN,Play notification sounds
+beeswarm,Visualisation (other),CRAN,Beeswarm dot plots (base graphics)
+BH,Maths & numerical,CRAN,Boost C++ header library
+biganalytics,Parallel & performance,CRAN,Analytics for bigmemory objects
+bigD,Reporting & documents,CRAN,Big number formatting for gt tables
+biglm,Parallel & performance,CRAN,Bounded memory linear/GLMs
+bigmemory,Parallel & performance,CRAN,Large matrices stored outside R's memory
+bigmemory.sri,Parallel & performance,CRAN,Shared resource interface for bigmemory
+bigtabulate,Parallel & performance,CRAN,Tabulation for bigmemory objects
+BiocManager,Package development & workflow,CRAN,Install and manage Bioc packages
+bit,Parallel & performance,CRAN,Efficient bit vectors
+bit64,Parallel & performance,CRAN,64-bit integers
+bitops,Maths & numerical,CRAN,Bitwise operations
+blob,Data import / export,CRAN,Binary large object storage
+brew,Package development & workflow,CRAN,Templating for R code generation
+brio,Package development & workflow,CRAN,Basic R I/O utilities
+broom,Data wrangling utilities,CRAN,Tidy model outputs into data frames
+broom.helpers,Data wrangling utilities,CRAN,Helpers for broom and tidy workflows
+broom.mixed,Data wrangling utilities,CRAN,Tidy mixed model outputs
+bslib,Reporting & documents,CRAN,Bootstrap themes for Shiny/R Markdown
+ca,Statistics & modelling,CRAN,Simple multiple and joint correspondence analysis
+cachem,Miscellaneous utilities,CRAN,Cache objects in memory or disk
+Cairo,Reporting & documents,CRAN,Cairo graphics device
+calibrate,Visualisation (other),CRAN,Label calibration for base plots
+callr,Miscellaneous utilities,CRAN,Call R from R in a clean session
+car,Statistics & modelling,CRAN,Companion to applied regression: ANOVA tests
+carData,Statistics & modelling,CRAN,Datasets for the car package
+cards,Reporting & documents,CRAN,Create analysis result data sets (ARDs)
+caTools,Maths & numerical,CRAN,Moving window statistics and ROC/AUC
+cellranger,Data import / export,CRAN,Excel cell range utilities (used by readxl)
+checkmate,Miscellaneous utilities,CRAN,Fast argument checking
+chron,Miscellaneous utilities,CRAN,Dates and times (older)
+circlize,Visualisation (other),CRAN,Circular/chord diagrams
+classInt,Spatial & GIS,CRAN,Class intervals for choropleth maps
+cli,Miscellaneous utilities,CRAN,Rich command-line interfaces
+clipr,Miscellaneous utilities,CRAN,Read/write system clipboard
+cmm,Statistics & modelling,CRAN,Categorical marginal models
+collections,Miscellaneous utilities,CRAN,Additional data structures (queues sets)
+colorspace,Visualisation (ggplot2 extensions),CRAN,Colour space tools and palettes
+combinat,Data wrangling utilities,CRAN,Combinatorics utilities
+commonmark,Reporting & documents,CRAN,CommonMark Markdown parser
+compositions,Statistics & modelling,CRAN,Compositional data analysis
+confintr,Statistics & modelling,CRAN,Confidence intervals for many statistics
+conflicted,Tidyverse & core data,CRAN,Explicit error on namespace conflicts
+corrplot,Visualisation (other),CRAN,Visualise correlation matrices (base graphics)
+cowplot,Visualisation (ggplot2 extensions),CRAN,ggplot2 themes and plot arrangement
+cpp11,Maths & numerical,CRAN,Modern C++11 interface for R
+crayon,Miscellaneous utilities,CRAN,ANSI colour in terminal output
+credentials,Package development & workflow,CRAN,Manage git/HTTPS credentials
+crosstalk,Reporting & documents,CRAN,Shared data for linked htmlwidgets
+curl,Miscellaneous utilities,CRAN,Curl HTTP client
+CVXR,Statistics & modelling,CRAN,Disciplined convex optimisation
+cyclocomp,Package development & workflow,CRAN,Cyclomatic complexity of R code
+data.table,Tidyverse & core data,CRAN,Fast in-memory data operations
+data.tree,Data wrangling utilities,CRAN,Hierarchical data structures
+datawizard,Statistics & modelling,CRAN,Data wrangling for easystats
+DBI,Data import / export,CRAN,Database interface abstraction layer
+dbplyr,Tidyverse & core data,CRAN,dplyr backend that translates to SQL
+deldir,Spatial & GIS,CRAN,Delaunay triangulation and Voronoi mosaics
+dendextend,Phylogenetics & trees,CRAN,Extend and compare dendrograms
+DEoptimR,Statistics & modelling,CRAN,Differential evolution optimisation in R
+Deriv,Statistics & modelling,CRAN,Symbolic differentiation
+desc,Package development & workflow,CRAN,Manipulate DESCRIPTION files
+devtools,Package development & workflow,CRAN,Package development workflow
+diffobj,Package development & workflow,CRAN,Diff R objects visually
+digest,Miscellaneous utilities,CRAN,Hash functions (MD5 SHA)
+diptest,Statistics & modelling,CRAN,Test for unimodality
+doBy,Statistics & modelling,CRAN,Group-wise statistics and linear contrasts
+doParallel,Parallel & performance,CRAN,Parallel backend for foreach
+doRNG,Parallel & performance,CRAN,Reproducible RNG for foreach
+dotCall64,Spatial & GIS,CRAN,Enhanced foreign function interface for spam
+downlit,Reporting & documents,CRAN,Syntax highlighting and linking for R code
+downloader,Miscellaneous utilities,CRAN,Download files with progress
+dplyr,Tidyverse & core data,CRAN,Data manipulation: filter mutate summarise join
+dqrng,Maths & numerical,CRAN,Fast random number generation
+DT,Reporting & documents,CRAN,DataTables HTML widget
+dtplyr,Tidyverse & core data,CRAN,dplyr backend using data.table for speed
+dtt,Maths & numerical,CRAN,Discrete trigonometric transforms
+duckdb,Data import / export,CRAN,Embedded analytical SQL database
+duckplyr,Tidyverse & core data,CRAN,dplyr backend using DuckDB
+ECOSolveR,Statistics & modelling,CRAN,ECOS convex optimiser R interface
+egg,Visualisation (ggplot2 extensions),CRAN,Arrange ggplot2 panels; align axes
+ellipse,Statistics & modelling,CRAN,Draw ellipses and ellipse-shaped confidence regions
+ellipsis,Miscellaneous utilities,CRAN,Tools for working with ...
+emmeans,Statistics & modelling,CRAN,Estimated marginal means and contrasts
+english,Miscellaneous utilities,CRAN,Convert numbers to English words
+estimability,Statistics & modelling,CRAN,Estimability tools for linear models
+eulerr,Visualisation (other),CRAN,Euler area-proportional diagrams
+evaluate,Reporting & documents,CRAN,Parse and evaluate R code returning results
+factoextra,Statistics & modelling,CRAN,Visualise PCA/clustering results
+FactoMineR,Statistics & modelling,CRAN,Multivariate exploratory analysis: PCA CA MFA
+fansi,Miscellaneous utilities,CRAN,ANSI string handling
+fastcluster,Machine learning & dimensionality reduction,CRAN,Fast hierarchical clustering
+fastmap,Miscellaneous utilities,CRAN,Fast map (key-value store)
+fastmatch,Parallel & performance,CRAN,Fast match() and %in% replacement
+fastmatrix,Maths & numerical,CRAN,Fast matrix computations
+fftw,Maths & numerical,CRAN,Fast Fourier Transform (FFTW library)
+filelock,Miscellaneous utilities,CRAN,Exclusive file locks
+fitdistrplus,Statistics & modelling,CRAN,Fit parametric distributions to data
+fontawesome,Reporting & documents,CRAN,Font Awesome icons in R
+fontBitstreamVera,Reporting & documents,CRAN,Bitstream Vera fonts for R graphics
+fontLiberation,Reporting & documents,CRAN,Liberation fonts for R graphics
+fontquiver,Reporting & documents,CRAN,Font management utilities
+forcats,Tidyverse & core data,CRAN,Factor handling utilities
+foreach,Parallel & performance,CRAN,Iterator-based looping for parallel code
+formatR,Reporting & documents,CRAN,Format R code automatically
+Formula,Statistics & modelling,CRAN,Extended formula objects
+fs,Miscellaneous utilities,CRAN,Modern file system operations
+furrr,Parallel & performance,CRAN,purrr-style functions using future
+futile.logger,Miscellaneous utilities,CRAN,Logging framework for R
+futile.options,Miscellaneous utilities,CRAN,Options management for futile packages
+future,Parallel & performance,CRAN,Asynchronous and parallel execution framework
+future.apply,Parallel & performance,CRAN,Apply functions using future
+gargle,Miscellaneous utilities,CRAN,Google API authentication utilities
+gdtools,Reporting & documents,CRAN,Graphics device utilities (fonts etc.)
+generics,Tidyverse & core data,CRAN,Generic S3 methods shared across packages
+GenSA,Statistics & modelling,CRAN,Generalised simulated annealing optimisation
+geosphere,Spatial & GIS,CRAN,Spherical trigonometry for geographic data
+gert,Package development & workflow,CRAN,Git operations from R
+GetoptLong,Miscellaneous utilities,CRAN,Parse command-line options
+getPass,Miscellaneous utilities,CRAN,Masked password input
+GGally,Visualisation (ggplot2 extensions),CRAN,ggplot2 extension: pair plots parallel coords
+ggalluvial,Visualisation (ggplot2 extensions),CRAN,Alluvial / Sankey diagrams
+gganimate,Visualisation (ggplot2 extensions),CRAN,Animate ggplot2 plots
+ggbeeswarm,Visualisation (ggplot2 extensions),CRAN,Beeswarm and quasirandom dot plots
+ggcorrplot,Visualisation (ggplot2 extensions),CRAN,Visualise correlation matrices
+ggdendro,Visualisation (ggplot2 extensions),CRAN,Dendrogram plots in ggplot2
+ggfittext,Visualisation (ggplot2 extensions),CRAN,Fit text inside ggplot2 geoms
+ggforce,Visualisation (ggplot2 extensions),CRAN,Additional geoms: sina zoom parallel sets
+ggfun,Visualisation (ggplot2 extensions),CRAN,Utility functions for ggplot2
+gginnards,Visualisation (ggplot2 extensions),CRAN,Inspect and manipulate ggplot internals
+ggiraph,Visualisation (ggplot2 extensions),CRAN,Interactive ggplot2 with tooltips
+ggmosaic,Visualisation (ggplot2 extensions),CRAN,Mosaic plots in ggplot2
+ggnetwork,Visualisation (ggplot2 extensions),CRAN,Network plots in ggplot2
+ggnewscale,Visualisation (ggplot2 extensions),CRAN,Multiple colour/fill scales in one plot
+ggplot2,Tidyverse & core data,CRAN,The grammar of graphics plotting system
+ggplotify,Visualisation (ggplot2 extensions),CRAN,Convert base/grid plots to ggplot2 objects
+ggpmisc,Visualisation (ggplot2 extensions),CRAN,Annotations: equations stats tables in ggplot2
+ggpp,Visualisation (ggplot2 extensions),CRAN,Table and plot grobs as ggplot2 geoms
+ggpubr,Visualisation (ggplot2 extensions),CRAN,Publication-ready ggplot2 themes and stats
+ggraph,Visualisation (ggplot2 extensions),CRAN,Network/graph visualisation with ggplot2
+ggrastr,Visualisation (ggplot2 extensions),CRAN,Rasterise ggplot layers for large data
+ggrepel,Visualisation (ggplot2 extensions),CRAN,Non-overlapping text/label positioning
+ggridges,Visualisation (ggplot2 extensions),CRAN,Ridgeline/joy plots
+ggseqlogo,Visualisation (ggplot2 extensions),CRAN,Sequence logo plots
+ggsignif,Visualisation (ggplot2 extensions),CRAN,Significance brackets on ggplot2 plots
+ggstats,Visualisation (ggplot2 extensions),CRAN,Statistical summaries as ggplot2 geoms
+ggtangle,Visualisation (ggplot2 extensions),CRAN,Untangle overlapping lines in ggplot2
+ggtern,Visualisation (ggplot2 extensions),CRAN,Ternary diagrams in ggplot2
+ggwordcloud,Visualisation (ggplot2 extensions),CRAN,Word cloud geom for ggplot2
+gh,Package development & workflow,CRAN,GitHub API client
+gitcreds,Package development & workflow,CRAN,Git credential store access
+GlobalOptions,Miscellaneous utilities,CRAN,Global options management
+globals,Parallel & performance,CRAN,Identify global variables in R expressions
+glue,Tidyverse & core data,CRAN,String interpolation with {variables}
+gmp,Maths & numerical,CRAN,Multiple precision arithmetic
+goftest,Statistics & modelling,CRAN,Goodness-of-fit tests
+GPArotation,Statistics & modelling,CRAN,Factor rotation for psych/factanal
+gplots,Visualisation (other),CRAN,Miscellaneous plotting tools
+graphlayouts,Network & graph analysis,CRAN,Layout algorithms for ggraph
+gratia,Statistics & modelling,CRAN,ggplot2-based GAM visualisation
+gridBase,Visualisation (other),CRAN,Integration of base and grid graphics
+gridExtra,Visualisation (ggplot2 extensions),CRAN,Arrange multiple grid grobs/plots
+gridGraphics,Visualisation (ggplot2 extensions),CRAN,Convert base graphics to grid
+gridtext,Visualisation (ggplot2 extensions),CRAN,Rich text rendering in grid/ggplot2
+grr,Data wrangling utilities,CRAN,Utility functions (getRecordRange etc.)
+gson,Data import / export,CRAN,Read/write GSON format (for clusterProfiler)
+gsubfn,Text mining & NLP,CRAN,Utilities for strings and function arguments
+gt,Reporting & documents,CRAN,Publication-quality tables
+gtable,Visualisation (ggplot2 extensions),CRAN,Arrange grobs in tables (used by ggplot2)
+gtExtras,Reporting & documents,CRAN,Extra gt table utilities
+gtools,Miscellaneous utilities,CRAN,Miscellaneous tools (permutations combinations etc.)
+hash,Data wrangling utilities,CRAN,Hash/dictionary data structure
+haven,Data import / export,CRAN,Read SPSS Stata SAS files
+hdf5r,Data import / export,CRAN,Interface to HDF5 file format
+heatmaply,Visualisation (other),CRAN,Interactive heatmaps using plotly
+here,Package development & workflow,CRAN,Project-relative file paths
+hexbin,Visualisation (other),CRAN,Hexagonal binning for scatter plots
+highr,Reporting & documents,CRAN,Syntax highlighting for R code
+Hmisc,Statistics & modelling,CRAN,Harrell's miscellaneous: many stat utilities
+hms,Miscellaneous utilities,CRAN,Time-of-day values
+htmlTable,Reporting & documents,CRAN,HTML tables with styling
+htmltools,Reporting & documents,CRAN,HTML generation tools
+htmlwidgets,Reporting & documents,CRAN,Framework for R HTML widgets
+httpuv,Miscellaneous utilities,CRAN,HTTP and WebSocket server
+httr,Miscellaneous utilities,CRAN,HTTP requests (older wraps curl)
+httr2,Miscellaneous utilities,CRAN,HTTP requests (modern functional API)
+ICC,Statistics & modelling,CRAN,Intraclass correlation coefficients
+IDPmisc,Statistics & modelling,CRAN,Utilities for large datasets (esp. IDP)
+ids,Miscellaneous utilities,CRAN,Generate random identifiers
+igraph,Network & graph analysis,CRAN,Network analysis and visualisation
+immunarch,Immune & clinical data,CRAN,Immune repertoire (BCR/TCR) analysis
+immundata,Immune & clinical data,CRAN,Datasets for immunarch
+ini,Miscellaneous utilities,CRAN,Read/write INI config files
+insight,Statistics & modelling,CRAN,Extract information from model objects
+interp,Spatial & GIS,CRAN,Bivariate interpolation (Delaunay)
+IRdisplay,Miscellaneous utilities,CRAN,Display methods for Jupyter/IRkernel
+IRkernel,Miscellaneous utilities,CRAN,R kernel for Jupyter
+isoband,Maths & numerical,CRAN,Isolines and isobands (used by ggplot2)
+iterators,Parallel & performance,CRAN,Iterator objects for R
+itsadug,Statistics & modelling,CRAN,Interpreting time series and autocorrelated data in GAMs
+janeaustenr,Text mining & NLP,CRAN,Jane Austen texts for examples
+janitor,Data wrangling utilities,CRAN,Clean data: column names tabyl dupes
+jpeg,Miscellaneous utilities,CRAN,Read/write JPEG images
+jquerylib,Reporting & documents,CRAN,jQuery JavaScript library
+jsonlite,Data import / export,CRAN,Fast JSON parser and generator
+juicyjuice,Miscellaneous utilities,CRAN,CSS selector utilities
+kableExtra,Reporting & documents,CRAN,Extend knitr::kable tables
+knitr,Reporting & documents,CRAN,Literate programming: embed R in documents
+L1pack,Maths & numerical,CRAN,L1 estimation and regression
+labeling,Visualisation (ggplot2 extensions),CRAN,Axis labelling algorithms
+lambda.r,Miscellaneous utilities,CRAN,Functional programming with pattern matching
+languageserver,Package development & workflow,CRAN,R language server for IDEs
+later,Miscellaneous utilities,CRAN,Schedule R code to run later
+latex2exp,Visualisation (ggplot2 extensions),CRAN,Use LaTeX math in ggplot2 labels
+latticeExtra,Visualisation (other),CRAN,Extra graphical utilities for lattice
+lazyeval,Miscellaneous utilities,CRAN,Lazy (non-standard) evaluation tools
+leaps,Statistics & modelling,CRAN,Exhaustive linear model subset selection
+lexicon,Text mining & NLP,CRAN,Lexicon datasets (sentiment profanity etc.)
+librarian,Package development & workflow,CRAN,Package installing and loading
+lifecycle,Tidyverse & core data,CRAN,Deprecation management for package functions
+lintr,Package development & workflow,CRAN,Static analysis / code linting
+listenv,Parallel & performance,CRAN,Environments that behave as lists (for future)
+litedown,Reporting & documents,CRAN,Lightweight R Markdown alternative
+lme4,Statistics & modelling,CRAN,Linear/generalised mixed-effects models
+lmerTest,Statistics & modelling,CRAN,P-values for lme4 mixed models
+lmodel2,Statistics & modelling,CRAN,Model II (major axis) regression
+lmtest,Statistics & modelling,CRAN,Tests for linear regression models
+locfit,Statistics & modelling,CRAN,Local regression likelihood and density estimation
+locfdr,Statistics & modelling,CRAN,Local false discovery rate estimation
+lpSolve,Maths & numerical,CRAN,Linear and integer programming
+lubridate,Tidyverse & core data,CRAN,Date/time parsing and arithmetic
+magick,Visualisation (other),CRAN,Image processing (ImageMagick)
+magrittr,Tidyverse & core data,CRAN,Pipe operators including %>%
+mapproj,Spatial & GIS,CRAN,Map projections
+maps,Spatial & GIS,CRAN,Draw geographical maps
+marginaleffects,Statistics & modelling,CRAN,Marginal effects and contrasts for many models
+markdown,Reporting & documents,CRAN,Markdown rendering
+mathjaxr,Reporting & documents,CRAN,MathJax in R documentation
+MatrixModels,Maths & numerical,CRAN,Modelling with sparse/dense matrix classes
+matrixStats,Maths & numerical,CRAN,Fast row/column statistics for matrices
+mediation,Statistics & modelling,CRAN,Causal mediation analysis
+memoise,Miscellaneous utilities,CRAN,Memoize (cache) R function results
+metap,Statistics & modelling,CRAN,Meta-analysis of significance values
+mgsub,Text mining & NLP,CRAN,Multiple simultaneous string substitution
+microbenchmark,Parallel & performance,CRAN,Precise timing of R expressions
+migest,Statistics & modelling,CRAN,Methods for estimating migration
+migration.indices,Statistics & modelling,CRAN,Migration concentration indices
+mime,Miscellaneous utilities,CRAN,MIME type lookups
+miniUI,Reporting & documents,CRAN,Small Shiny UI layouts (gadgets)
+minqa,Statistics & modelling,CRAN,Derivative-free optimisation (bobyqa newuoa)
+mipfp,Statistics & modelling,CRAN,Iterative proportional fitting/fractions
+mirai,Parallel & performance,CRAN,Minimalist async tasks using nanonext
+misc3d,Visualisation (other),CRAN,3D plotting utilities
+mitools,Statistics & modelling,CRAN,Tools for multiple imputation inference
+mixtools,Statistics & modelling,CRAN,Mixture model fitting
+mnormt,Statistics & modelling,CRAN,Multivariate normal and t distributions
+modeltools,Statistics & modelling,CRAN,Tools and classes for statistical models
+modEvA,Spatial & GIS,CRAN,Model evaluation for species distribution models
+mongolite,Data import / export,CRAN,MongoDB client
+msigdbr,Pathway & functional enrichment,CRAN,MSigDB gene sets in R
+multcomp,Statistics & modelling,CRAN,Multiple comparison procedures
+multcompView,Statistics & modelling,CRAN,Visualise multiple comparison results
+munsell,Visualisation (ggplot2 extensions),CRAN,Munsell colour system utilities
+mutoss,Statistics & modelling,CRAN,Multiple testing procedures
+mvnfast,Statistics & modelling,CRAN,Fast multivariate normal density/sampling
+mvtnorm,Statistics & modelling,CRAN,Multivariate normal/t probabilities and quantiles
+nanonext,Parallel & performance,CRAN,NNG (nanomsg) messaging library
+network,Network & graph analysis,CRAN,Network data structures (statnet)
+networkD3,Visualisation (other),CRAN,D3-based interactive network/Sankey plots
+nloptr,Statistics & modelling,CRAN,Interface to NLopt optimisation library
+NLP,Text mining & NLP,CRAN,Natural language processing infrastructure
+nnls,Maths & numerical,CRAN,Non-negative least squares
+nor1mix,Statistics & modelling,CRAN,Normal (1-d) mixture models
+numDeriv,Statistics & modelling,CRAN,Numerical gradient/Hessian computation
+officer,Reporting & documents,CRAN,Create/edit Word and PowerPoint documents
+openssl,Miscellaneous utilities,CRAN,Cryptography and SSL/TLS
+openxlsx,Data import / export,CRAN,Read/write/format Excel files
+ordinal,Statistics & modelling,CRAN,Ordinal regression models
+osqp,Maths & numerical,CRAN,Quadratic programming solver
+otel,Miscellaneous utilities,CRAN,OpenTelemetry tracing for R
+pak,Package development & workflow,CRAN,Fast package installer with dependency solving
+paletteer,Visualisation (ggplot2 extensions),CRAN,Meta-package: access hundreds of palettes
+parallelly,Parallel & performance,CRAN,Utilities for parallel/future
+patchwork,Visualisation (ggplot2 extensions),CRAN,Combine multiple ggplots into one figure
+pbdZMQ,Miscellaneous utilities,CRAN,ZeroMQ interface (for IRkernel)
+pbkrtest,Statistics & modelling,CRAN,Parametric bootstrap for mixed models
+permute,Statistics & modelling,CRAN,Restricted permutations for community ecology
+pheatmap,Visualisation (other),CRAN,Pretty heatmaps with clustering
+pillar,Tidyverse & core data,CRAN,Pretty printing for tibbles
+pkgbuild,Package development & workflow,CRAN,Build R packages
+pkgconfig,Miscellaneous utilities,CRAN,Private configuration for packages
+pkgdown,Package development & workflow,CRAN,Build documentation websites for R packages
+pkgload,Package development & workflow,CRAN,Load packages in development
+plogr,Miscellaneous utilities,CRAN,C++ logging library for R packages
+plotfunctions,Visualisation (other),CRAN,Utility functions for plotting (GAMs)
+plotly,Visualisation (other),CRAN,Interactive web-based plots via plotly.js
+plotrix,Visualisation (other),CRAN,Miscellaneous base graphics extensions
+plotscale,Visualisation (ggplot2 extensions),CRAN,Scale plots to exact dimensions
+plyr,Data wrangling utilities,CRAN,Split-apply-combine (older use dplyr)
+png,Miscellaneous utilities,CRAN,Read/write PNG images
+polyclip,Maths & numerical,CRAN,Polygon clipping operations
+polylabelr,Maths & numerical,CRAN,Find pole of inaccessibility for polygons
+polynom,Maths & numerical,CRAN,Polynomial arithmetic
+praise,Package development & workflow,CRAN,Positive reinforcement for test output
+prettyunits,Miscellaneous utilities,CRAN,Human-readable sizes and time spans
+prismatic,Visualisation (ggplot2 extensions),CRAN,Colour manipulation utilities
+processx,Miscellaneous utilities,CRAN,Run system processes from R
+productplots,Data wrangling utilities,CRAN,Product plots for categorical data
+profvis,Package development & workflow,CRAN,Profile and visualise R code performance
+progress,Miscellaneous utilities,CRAN,Terminal progress bars
+progressr,Parallel & performance,CRAN,Unified progress reporting
+promises,Miscellaneous utilities,CRAN,Async promises for R
+proto,Miscellaneous utilities,CRAN,Prototype object-based programming
+ps,Miscellaneous utilities,CRAN,Process utilities
+pscl,Statistics & modelling,CRAN,Political science models: zero-inflated hurdle
+psych,Statistics & modelling,CRAN,Psychometrics: factor analysis reliability
+purrr,Tidyverse & core data,CRAN,Functional programming: map reduce walk
+pwr,Statistics & modelling,CRAN,Power analysis for common statistical tests
+qap,Maths & numerical,CRAN,Quadratic assignment problem solvers
+qdapRegex,Text mining & NLP,CRAN,Regular expression tools for text analysis
+qqconf,Statistics & modelling,CRAN,Confidence bands for QQ plots
+quadprog,Maths & numerical,CRAN,Quadratic programming
+quantreg,Statistics & modelling,CRAN,Quantile regression
+R.cache,Miscellaneous utilities,CRAN,Caching with automatic key generation
+R.methodsS3,Miscellaneous utilities,CRAN,S3 method utilities
+R.oo,Miscellaneous utilities,CRAN,Object-oriented programming with S3
+R.utils,Miscellaneous utilities,CRAN,Many utility functions
+R6,Miscellaneous utilities,CRAN,Encapsulated object-oriented programming
+ragg,Reporting & documents,CRAN,AGG-based graphics device (fast PNG/TIFF)
+randomcoloR,Visualisation (ggplot2 extensions),CRAN,Generate random distinct colours
+rappdirs,Miscellaneous utilities,CRAN,Platform-appropriate data directories
+rbibutils,Reporting & documents,CRAN,Convert bibliography formats
+rcmdcheck,Package development & workflow,CRAN,Run R CMD check from R
+RColorBrewer,Visualisation (ggplot2 extensions),CRAN,ColorBrewer palettes
+Rcpp,Maths & numerical,CRAN,Seamless R and C++ integration
+RcppArmadillo,Maths & numerical,CRAN,Armadillo C++ linear algebra
+RcppEigen,Maths & numerical,CRAN,Eigen C++ linear algebra
+RcppProgress,Maths & numerical,CRAN,Progress bar for Rcpp code
+RcppTOML,Maths & numerical,CRAN,TOML config parsing via Rcpp
+RCurl,Miscellaneous utilities,CRAN,General network client interface (libcurl)
+Rdpack,Reporting & documents,CRAN,Insert references in Rd documentation
+reactable,Reporting & documents,CRAN,Interactive HTML tables
+reactR,Reporting & documents,CRAN,React.js bindings for R
+readr,Tidyverse & core data,CRAN,Fast CSV/TSV reading
+readxl,Data import / export,CRAN,Read Excel .xls and .xlsx files
+reformulas,Statistics & modelling,CRAN,Formula utilities for mixed-model packages
+registry,Miscellaneous utilities,CRAN,Registry infrastructure for R
+rematch,Miscellaneous utilities,CRAN,Match regular expressions with a nicer API
+rematch2,Miscellaneous utilities,CRAN,Tidy output from regular expression matching
+remotes,Package development & workflow,CRAN,Install packages from remote sources
+rentrez,Genomic ranges & annotation,CRAN,NCBI Entrez utilities
+repr,Miscellaneous utilities,CRAN,Serialisable representations for Jupyter
+reprex,Package development & workflow,CRAN,Reproducible examples for sharing
+reshape,Data wrangling utilities,CRAN,Even older reshape (predecessor to reshape2)
+reshape2,Data wrangling utilities,CRAN,Melt and cast data (older use tidyr)
+restfulr,Miscellaneous utilities,CRAN,R interface to RESTful web services
+reticulate,Miscellaneous utilities,CRAN,Python interface for R
+rex,Miscellaneous utilities,CRAN,Friendly regular expressions
+rgl,Visualisation (other),CRAN,3D interactive visualisation
+RhpcBLASctl,Parallel & performance,CRAN,Control number of BLAS threads
+rio,Data import / export,CRAN,Swiss-army import/export: delegates by file extension
+rlist,Data import / export,CRAN,Tools for working with lists
+rlang,Tidyverse & core data,CRAN,Low-level R language tools used by tidyverse
+rmarkdown,Reporting & documents,CRAN,R Markdown document compilation
+Rmisc,Statistics & modelling,CRAN,Confidence intervals SE multi-plot layouts
+Rmpfr,Maths & numerical,CRAN,Arbitrary precision using MPFR
+rngtools,Parallel & performance,CRAN,Utilities for RNG streams
+robustbase,Statistics & modelling,CRAN,Basic robust statistics
+ROCR,Statistics & modelling,CRAN,ROC curve analysis and performance visualisation
+roxygen2,Package development & workflow,CRAN,Documentation from R comments
+rprojroot,Package development & workflow,CRAN,Find project root directory
+rsample,Data wrangling utilities,CRAN,Resampling infrastructure for tidymodels
+Rsolnp,Statistics & modelling,CRAN,Nonlinear optimisation (SQP)
+RSQLite,Data import / export,CRAN,SQLite database driver
+rstatix,Statistics & modelling,CRAN,Pipe-friendly statistical tests
+rstudioapi,Miscellaneous utilities,CRAN,Access RStudio API
+RUnit,Package development & workflow,CRAN,Unit testing framework (older)
+rversions,Package development & workflow,CRAN,Query R and Bioc version history
+rvest,Miscellaneous utilities,CRAN,Web scraping
+s2,Spatial & GIS,CRAN,Spherical geometry (Google S2 library)
+S7,Miscellaneous utilities,CRAN,New OOP system for R (successor to R5/S4)
+sandwich,Statistics & modelling,CRAN,Robust covariance matrix estimators
+sass,Reporting & documents,CRAN,Sass CSS preprocessor for R
+scales,Visualisation (ggplot2 extensions),CRAN,Scale functions for ggplot2 axes and legends
+scattermore,Visualisation (ggplot2 extensions),CRAN,Fast rasterised scatter plots
+scatterpie,Visualisation (ggplot2 extensions),CRAN,Pie chart scatter plots
+scatterplot3d,Visualisation (other),CRAN,Static 3D scatter plots
+scCustomize,Machine learning & dimensionality reduction,CRAN,Customised Seurat/scRNA visualisation
+scrime,Statistics & modelling,CRAN,Analysis of high-dimensional categorical data
+scs,Maths & numerical,CRAN,Splitting conic solver
+sctransform,Machine learning & dimensionality reduction,CRAN,Variance-stabilising transformation for scRNA
+segmented,Statistics & modelling,CRAN,Segmented/breakpoint regression
+selectr,Miscellaneous utilities,CRAN,CSS selector to XPath translator
+seriation,Machine learning & dimensionality reduction,CRAN,Seriation/ordering for matrices and data
+sessioninfo,Package development & workflow,CRAN,Print session info
+Seurat,Single-cell & genomics,CRAN,Single-cell RNA-seq analysis
+SeuratObject,Single-cell & genomics,CRAN,Data structures for Seurat
+sf,Spatial & GIS,CRAN,Simple features: vector spatial data
+shades,Visualisation (ggplot2 extensions),CRAN,Simple colour manipulation
+shadowtext,Visualisation (ggplot2 extensions),CRAN,Text geom with drop shadow
+shape,Visualisation (other),CRAN,Functions for plotting shapes
+shiny,Reporting & documents,CRAN,Interactive web applications
+shinythemes,Reporting & documents,CRAN,Bootstrap themes for Shiny
+sitmo,Maths & numerical,CRAN,Parallel RNG (for Rcpp)
+slam,Maths & numerical,CRAN,Sparse lightweight arrays and matrices
+smplot2,Visualisation (ggplot2 extensions),CRAN,Summarise and visualise data with ggplot2
+sn,Statistics & modelling,CRAN,Skew-normal and skew-t distributions
+sna,Network & graph analysis,CRAN,Social network analysis
+SnowballC,Text mining & NLP,CRAN,Snowball stemmer
+sourcetools,Miscellaneous utilities,CRAN,Read and tokenise R source code
+sp,Spatial & GIS,CRAN,Older spatial data classes
+spaa,Spatial & GIS,CRAN,Species association and diversity analysis
+spam,Spatial & GIS,CRAN,Sparse matrix operations
+SparseM,Maths & numerical,CRAN,Sparse matrix classes and methods
+spatstat.data,Spatial & GIS,CRAN,Datasets for spatstat
+spatstat.explore,Spatial & GIS,CRAN,EDA for spatial point patterns
+spatstat.geom,Spatial & GIS,CRAN,Geometry for spatstat
+spatstat.random,Spatial & GIS,CRAN,Simulation for spatstat
+spatstat.sparse,Spatial & GIS,CRAN,Sparse arrays for spatstat
+spatstat.univar,Spatial & GIS,CRAN,Univariate stats for spatstat
+spatstat.utils,Spatial & GIS,CRAN,Utilities for spatstat
+spData,Spatial & GIS,CRAN,Spatial datasets
+spdep,Spatial & GIS,CRAN,Spatial dependence: weights tests models
+speedglm,Statistics & modelling,CRAN,Fast fitting of GLMs for large datasets
+splus2R,Statistics & modelling,CRAN,Supplement S-PLUS functionality in R
+sqldf,Data import / export,CRAN,SQL queries on R data frames
+ssize.fdr,Statistics & modelling,CRAN,Sample size for microarray FDR
+statmod,Statistics & modelling,CRAN,Statistical modelling utilities
+statnet.common,Network & graph analysis,CRAN,Utilities shared by statnet packages
+stringdist,Text mining & NLP,CRAN,String distance and approximate matching
+stringi,Text mining & NLP,CRAN,Comprehensive string manipulation (ICU)
+stringr,Tidyverse & core data,CRAN,String manipulation built on stringi
+styler,Package development & workflow,CRAN,Non-invasive code formatting
+survey,Statistics & modelling,CRAN,Analysis of complex survey designs
+svglite,Reporting & documents,CRAN,SVG graphics device
+sys,Miscellaneous utilities,CRAN,System commands and environment
+systemfonts,Reporting & documents,CRAN,System font discovery
+syuzhet,Text mining & NLP,CRAN,Sentiment analysis and narrative arc
+tensor,Maths & numerical,CRAN,Tensor products of arrays
+tensorA,Maths & numerical,CRAN,Tensor operations
+terra,Spatial & GIS,CRAN,Raster and vector spatial analysis
+textclean,Text mining & NLP,CRAN,Text cleaning and normalisation
+textshape,Text mining & NLP,CRAN,Reshape text data
+textshaping,Reporting & documents,CRAN,Text shaping (HarfBuzz/FreeType)
+TFisher,Statistics & modelling,CRAN,Fisher's method for combining p-values
+TH.data,Statistics & modelling,CRAN,Datasets for multcomp and other packages
+tibble,Tidyverse & core data,CRAN,Modern data frame replacement
+tidygam,Statistics & modelling,CRAN,Tidy tools for GAM models
+tidygraph,Network & graph analysis,CRAN,Tidy API for graph manipulation
+tidyr,Tidyverse & core data,CRAN,Reshaping data: pivot_wider pivot_longer nest
+tidyselect,Tidyverse & core data,CRAN,Select columns with tidy syntax
+tidytext,Text mining & NLP,CRAN,Tidy text mining framework
+tidyverse,Tidyverse & core data,CRAN,Meta-package loading ggplot2 dplyr tidyr readr purrr etc.
+timechange,Time series & forecasting,CRAN,Arithmetic on date-time objects
+timeDate,Time series & forecasting,CRAN,Financial calendar/timezone handling
+tinytex,Reporting & documents,CRAN,Lightweight LaTeX installation manager
+tm,Text mining & NLP,CRAN,Text mining infrastructure
+tokenizers,Text mining & NLP,CRAN,Fast text tokenisation
+transformr,Visualisation (other),CRAN,Smooth transformation of shapes for gganimate
+treemap,Visualisation (other),CRAN,Treemap visualisations
+treemapify,Visualisation (other),CRAN,ggplot2-based treemaps
+truncnorm,Statistics & modelling,CRAN,Truncated normal distribution
+TSP,Maths & numerical,CRAN,Travelling salesman problem solvers
+tweenr,Visualisation (other),CRAN,Tween data for smooth animations (gganimate)
+tzdb,Miscellaneous utilities,CRAN,Time zone database
+ucminf,Statistics & modelling,CRAN,Unconstrained nonlinear optimisation
+umap,Machine learning & dimensionality reduction,CRAN,Uniform Manifold Approximation and Projection
+units,Spatial & GIS,CRAN,Measurement units for R vectors
+UpSetR,Visualisation (other),CRAN,UpSet intersection plots
+upstartr,Miscellaneous utilities,CRAN,Startup utilities (verify source)
+urlchecker,Package development & workflow,CRAN,Check URLs in package documentation
+usethis,Package development & workflow,CRAN,Automate package/project setup
+utf8,Miscellaneous utilities,CRAN,UTF-8 text processing
+uuid,Miscellaneous utilities,CRAN,Generate UUIDs
+uwot,Machine learning & dimensionality reduction,CRAN,Fast UMAP implementation
+V8,Miscellaneous utilities,CRAN,JavaScript engine (V8) for R
+vctrs,Tidyverse & core data,CRAN,Vector type system underlying tidyverse
+VGAM,Statistics & modelling,CRAN,Vector GLMs and GAMs
+vipor,Visualisation (ggplot2 extensions),CRAN,Offset points (used by ggbeeswarm)
+viridis,Visualisation (ggplot2 extensions),CRAN,Viridis perceptually-uniform palettes
+viridisLite,Visualisation (ggplot2 extensions),CRAN,Lightweight viridis palette functions
+vroom,Data import / export,CRAN,Very fast delimited file reading
+waldo,Package development & workflow,CRAN,Find differences between R objects
+webshot,Reporting & documents,CRAN,Screenshot web pages/Shiny apps
+WGCNA,Bulk RNA-seq & differential expression,CRAN,Weighted gene co-expression network analysis
+whisker,Package development & workflow,CRAN,Mustache templating
+withr,Miscellaneous utilities,CRAN,Run code with temporarily changed settings
+wk,Spatial & GIS,CRAN,Well-known binary/text geometry
+wordcloud,Text mining & NLP,CRAN,Word cloud plots
+writexl,Data import / export,CRAN,Write Excel files without Java dependency
+xfun,Reporting & documents,CRAN,Utility functions for knitr/xfun
+XML,Data import / export,CRAN,Older XML parsing library
+xml2,Miscellaneous utilities,CRAN,Parse and generate XML
+xmlparsedata,Package development & workflow,CRAN,Parse R code as XML
+xopen,Miscellaneous utilities,CRAN,Open files/URLs in default app
+xtable,Reporting & documents,CRAN,Export tables to LaTeX and HTML
+yaml,Data import / export,CRAN,Read/write YAML files
+yulab.utils,Visualisation (ggplot2 extensions),CRAN,Utility functions for Yu lab ggplot2 packages
+zip,Miscellaneous utilities,CRAN,Create/read ZIP archives
+corpcor,Statistics & modelling,CRAN,Efficient estimation of covariance and partial correlation
+locfdr,Statistics & modelling,CRAN,Local false discovery rate estimation
+,,,
+,,,
+nnls,Maths & numerical,CRAN,Non-negative least squares
+readr,Tidyverse & core data,CRAN,Fast CSV/TSV reading
+testthat,Package development & workflow,CRAN,Unit testing framework
+bioc::affy,Bulk RNA-seq & differential expression,Bioconductor,Affymetrix microarray processing
+bioc::affyio,Bulk RNA-seq & differential expression,Bioconductor,Read Affymetrix CEL files
+bioc::annotate,Genomic ranges & annotation,Bioconductor,Annotation for microarray data
+bioc::AnnotationDbi,Genomic ranges & annotation,Bioconductor,Annotation database interface
+bioc::AnnotationHub,Genomic ranges & annotation,Bioconductor,Access Bioc annotation resources
+bioc::assorthead,Single-cell & genomics,Bioconductor,Header-only C++ libs for Bioc
+bioc::basilisk,Single-cell & genomics,Bioconductor,Python environment management for Bioc
+bioc::basilisk.utils,Single-cell & genomics,Bioconductor,Utilities for basilisk
+bioc::batchelor,Single-cell & genomics,Bioconductor,Batch correction for single-cell data
+bioc::beachmat,Single-cell & genomics,Bioconductor,C++ matrix access for Bioc
+bioc::Biobase,Single-cell & genomics,Bioconductor,Base Bioc classes (ExpressionSet)
+bioc::BiocFileCache,Genomic ranges & annotation,Bioconductor,Local file cache for Bioc resources
+bioc::BiocGenerics,Single-cell & genomics,Bioconductor,Generic functions for Bioc
+bioc::BiocIO,Genomic ranges & annotation,Bioconductor,I/O utilities for Bioc
+bioc::BiocNeighbors,Single-cell & genomics,Bioconductor,Nearest neighbour methods for Bioc
+bioc::BiocParallel,Single-cell & genomics,Bioconductor,Parallel computing for Bioc
+bioc::BiocSingular,Single-cell & genomics,Bioconductor,SVD/PCA methods for Bioc
+bioc::BiocVersion,Genomic ranges & annotation,Bioconductor,Current Bioc version metadata
+bioc::biocViews,Genomic ranges & annotation,Bioconductor,Bioc package categorisation vocabulary
+bioc::bioDist,Bulk RNA-seq & differential expression,Bioconductor,Distance measures for genomic data
+bioc::biomaRt,Genomic ranges & annotation,Bioconductor,Query BioMart databases (Ensembl etc.)
+bioc::Biostrings,Genomic ranges & annotation,Bioconductor,Efficient biological sequence handling
+bioc::clusterProfiler,Pathway & functional enrichment,Bioconductor,GO and KEGG enrichment analysis
+bioc::DelayedArray,Single-cell & genomics,Bioconductor,Array-like objects with delayed computation
+bioc::DelayedMatrixStats,Single-cell & genomics,Bioconductor,Stats for DelayedMatrix objects
+bioc::dir.expiry,Miscellaneous utilities,Bioconductor,Manage expiry of cached directories
+bioc::DOSE,Pathway & functional enrichment,Bioconductor,Disease ontology enrichment analysis
+bioc::edgeR,Bulk RNA-seq & differential expression,Bioconductor,Differential expression for count data
+bioc::EnhancedVolcano,Bulk RNA-seq & differential expression,Bioconductor,Publication-ready volcano plots
+bioc::enrichplot,Pathway & functional enrichment,Bioconductor,Visualise clusterProfiler results
+bioc::ExperimentHub,Genomic ranges & annotation,Bioconductor,Access Bioc experiment datasets
+bioc::fgsea,Pathway & functional enrichment,Bioconductor,Fast gene set enrichment analysis
+bioc::genefilter,Bulk RNA-seq & differential expression,Bioconductor,Filtering genes for Bioc
+bioc::GenomeInfoDb,Genomic ranges & annotation,Bioconductor,Chromosome/genome metadata
+bioc::GenomeInfoDbData,Genomic ranges & annotation,Bioconductor,Data for GenomeInfoDb
+bioc::GenomicAlignments,Genomic ranges & annotation,Bioconductor,Read alignments and coverage
+bioc::GenomicFeatures,Genomic ranges & annotation,Bioconductor,Gene model/transcript annotation
+bioc::GenomicRanges,Genomic ranges & annotation,Bioconductor,Core Bioc genomic interval class
+bioc::GEOquery,Genomic ranges & annotation,Bioconductor,Download data from NCBI GEO
+bioc::GO.db,Pathway & functional enrichment,Bioconductor,Gene Ontology annotation database
+bioc::GOSemSim,Pathway & functional enrichment,Bioconductor,GO semantic similarity measures
+bioc::graph,Network & graph analysis,Bioconductor,Graph data structures for Bioc
+bioc::h5mread,Single-cell & genomics,Bioconductor,Fast HDF5 reading for Bioc
+bioc::HDF5Array,Single-cell & genomics,Bioconductor,HDF5 backend for DelayedArray
+bioc::HDO.db,Pathway & functional enrichment,Bioconductor,Human Disease Ontology database
+bioc::HSMMSingleCell,Single-cell & genomics,Bioconductor,Skeletal muscle single-cell dataset
+bioc::illuminaio,Bulk RNA-seq & differential expression,Bioconductor,Read Illumina IDAT files
+bioc::impute,Bulk RNA-seq & differential expression,Bioconductor,KNN imputation for gene expression
+bioc::interactiveDisplayBase,Genomic ranges & annotation,Bioconductor,Base for interactive Bioc displays
+bioc::IRanges,Genomic ranges & annotation,Bioconductor,Integer range infrastructure
+bioc::KEGGREST,Pathway & functional enrichment,Bioconductor,Access KEGG REST API
+bioc::limma,Bulk RNA-seq & differential expression,Bioconductor,Linear models for microarray/RNA-seq DE
+bioc::MatrixGenerics,Single-cell & genomics,Bioconductor,Generic matrix stats functions
+bioc::minfi,Bulk RNA-seq & differential expression,Bioconductor,Methylation array analysis (450k EPIC)
+bioc::MOFA2,Single-cell & genomics,Bioconductor,Multi-omics factor analysis v2
+bioc::MOFAdata,Single-cell & genomics,Bioconductor,Datasets for MOFA2
+bioc::monocle,Single-cell & genomics,Bioconductor,Trajectory analysis for single-cell (v2)
+bioc::multtest,Bulk RNA-seq & differential expression,Bioconductor,Multiple testing corrections
+bioc::org.Hs.eg.db,Pathway & functional enrichment,Bioconductor,Human gene annotation (Entrez)
+bioc::preprocessCore,Bulk RNA-seq & differential expression,Bioconductor,Normalisation routines (quantile etc.)
+bioc::pvca,Bulk RNA-seq & differential expression,Bioconductor,Principal variance component analysis
+bioc::qusage,Bulk RNA-seq & differential expression,Bioconductor,Quantitative set analysis for gene expression
+bioc::qvalue,Statistics & modelling,Bioconductor,Q-value FDR estimation
+bioc::RBGL,Network & graph analysis,Bioconductor,Graph algorithms (uses BGL)
+bioc::reactome.db,Pathway & functional enrichment,Bioconductor,Reactome pathway annotations
+bioc::ResidualMatrix,Single-cell & genomics,Bioconductor,Delayed residual matrix for Bioc
+bioc::Rgraphviz,Network & graph analysis,Bioconductor,Graphviz layouts for Bioc graphs
+bioc::rhdf5,Single-cell & genomics,Bioconductor,HDF5 R interface
+bioc::rhdf5filters,Single-cell & genomics,Bioconductor,HDF5 compression filters
+bioc::Rhdf5lib,Single-cell & genomics,Bioconductor,HDF5 C library for Bioc
+bioc::Rhtslib,Genomic ranges & annotation,Bioconductor,HTSlib C library for Bioc
+bioc::rrvgo,Pathway & functional enrichment,Bioconductor,Reduce and visualise GO terms
+bioc::Rsamtools,Genomic ranges & annotation,Bioconductor,BAM/SAM file I/O
+bioc::rtracklayer,Genomic ranges & annotation,Bioconductor,Import/export genomic tracks (BED GFF etc.)
+bioc::S4Arrays,Single-cell & genomics,Bioconductor,S4 array infrastructure
+bioc::S4Vectors,Genomic ranges & annotation,Bioconductor,S4 vector classes for Bioc
+bioc::ScaledMatrix,Single-cell & genomics,Bioconductor,Delayed scaled matrix for Bioc
+bioc::scuttle,Single-cell & genomics,Bioconductor,Utility functions for single-cell analysis
+bioc::siggenes,Bulk RNA-seq & differential expression,Bioconductor,Multiple testing and FDR (SAM/B-statistic)
+bioc::SingleCellExperiment,Single-cell & genomics,Bioconductor,Core Bioc single-cell data container
+bioc::slingshot,Single-cell & genomics,Bioconductor,Trajectory inference for single-cell data
+bioc::SparseArray,Single-cell & genomics,Bioconductor,Sparse array class for Bioc
+bioc::sparseMatrixStats,Single-cell & genomics,Bioconductor,Stats for sparse matrices
+bioc::STRINGdb,Pathway & functional enrichment,Bioconductor,STRING protein interaction network
+bioc::SummarizedExperiment,Single-cell & genomics,Bioconductor,Core Bioc genomics data container
+bioc::tidyHeatmap,Visualisation (other),Bioconductor,Tidy heatmaps using ComplexHeatmap
+bioc::tradeSeq,Single-cell & genomics,Bioconductor,Trajectory-based differential expression
+bioc::TrajectoryUtils,Single-cell & genomics,Bioconductor,Utilities for trajectory analysis
+bioc::UCSC.utils,Genomic ranges & annotation,Bioconductor,Utilities for UCSC genome browser data
+bioc::XVector,Genomic ranges & annotation,Bioconductor,Shared memory string storage
+bioc::zlibbioc,Genomic ranges & annotation,Bioconductor,zlib compression for Bioc
+BIGslu/BIGpicture,Visualisation (other),GitHub,Visualisation tools (BIGslu)
+jokergoo/ComplexHeatmap,Visualisation (other),GitHub,Feature-rich heatmaps
+BenaroyaResearch/countSubsetNorm,Bulk RNA-seq & differential expression,GitHub,Count subsetting and normalisation
+davidsjoberg/ggsankey,Visualisation (ggplot2 extensions),GitHub,Sankey/alluvial diagrams
+basilinb/HoardR,Package development & workflow,GitHub,Package management helpers
+BIGslu/kimma,Bulk RNA-seq & differential expression,GitHub,Linear mixed models for RNA-seq
+variani/lme4qtl,Statistics & modelling,GitHub,QTL mapping with lme4
+UWISDOM/madRich,Immune & clinical data,GitHub,Data utilities
+BenaroyaResearch/miscHelpers,Immune & clinical data,GitHub,Miscellaneous helper functions
+igordot/msigdbdf,Pathway & functional enrichment,GitHub,MSigDB gene sets as data frames
+xuranw/MuSiC,Single-cell & genomics,GitHub,Bulk RNA deconvolution with scRNA reference
+renozao/pkgmaker@develop,Package development & workflow,GitHub,Package development helpers (develop branch)
+BIGslu/pullString,Immune & clinical data,GitHub,String parsing utilities
+BIGslu/RNAetc,Bulk RNA-seq & differential expression,GitHub,RNA-seq utilities
+meichendong/SCDC,Single-cell & genomics,GitHub,Single-cell deconvolution
+BIGslu/SEARchways,Pathway & functional enrichment,GitHub,Pathway enrichment tools
+stefanocoretta/tidymv,Statistics & modelling,GitHub,Tidy marginal/conditional smooths for GAMs
+renozao/xbioc,Package development & workflow,GitHub,Bioc package development extras
+BenaroyaResearch/annotables,Genomic ranges & annotation,GitHub,Gene annotation tables
+BenaroyaResearch/apird,Immune & clinical data,GitHub,API wrapper for immunology data
+BenaroyaResearch/RNAseQC,Bulk RNA-seq & differential expression,GitHub,RNA-seq QC metrics
