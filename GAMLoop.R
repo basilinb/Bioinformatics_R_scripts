@@ -83,14 +83,12 @@ GAMLoop <- function(
   returnGeneModelSummary = TRUE,
   returnModelObject = TRUE
 ) {
-  # Load required packages
-  require(tidyverse, quietly = TRUE) # For data wrangling
-  require(mgcv, quietly = TRUE) # For GAM modeling
-  require(data.table, quietly = TRUE) # For efficient list-to-dataframe conversion
+  require(tidyverse, quietly = TRUE)
+  require(mgcv, quietly = TRUE)
+  require(data.table, quietly = TRUE)
 
-  startTime <- Sys.time() # Start time tracking
+  startTime <- Sys.time()
 
-  # Determine which dataset to use: module-level or gene-level
   if (!is.null(moduleDatwMeta)) {
     datTemp <- moduleDatwMeta
     geneNames <- colnames(datTemp %>% select(starts_with("module")))
@@ -105,30 +103,33 @@ GAMLoop <- function(
     geneNames <- rownames(voomObject$E)
   }
 
-  # Initialize progress bar
   nIter <- length(geneNames)
   pb <- txtProgressBar(min = 1, max = nIter, style = 3, width = 50, char = "=")
 
-  # Preallocate lists only if needed
   gmtPTableList <- if (returnFixedEffects) vector("list", nIter) else NULL
   gmtSTableList <- if (returnSmoothEffects) vector("list", nIter) else NULL
   gmtSummaryList <- if (returnGeneModelSummary) vector("list", nIter) else NULL
   gmtModelList <- if (returnModelObject) vector("list", nIter) else NULL
-  failedGenes <- c() # Always track failed genes
+  failedGenes <- c()
 
-  gamForm <- gamFormula
   print("Starting GAM loop:")
-  # Loop through each gene and fit a GAM model if required
+
   for (i in seq_along(geneNames)) {
     ensGene <- geneNames[i]
-    formulaGam <- as.formula(paste(ensGene, gamForm))
+    formulaGam <- as.formula(paste(ensGene, gamFormula))
 
     tryCatch(
       {
         gmt <- mgcv::gam(formulaGam, data = datTemp)
 
-        if (returnFixedEffects) {
+        # ── Compute summary once, reuse for both effect tables ──────────────
+        if (
+          returnFixedEffects || returnSmoothEffects || returnGeneModelSummary
+        ) {
           gmtSummary <- summary(gmt)
+        }
+
+        if (returnFixedEffects) {
           gmtPTableList[[i]] <- gmtSummary$p.table %>%
             as.data.frame() %>%
             rownames_to_column("variable") %>%
@@ -136,7 +137,6 @@ GAMLoop <- function(
         }
 
         if (returnSmoothEffects) {
-          gmtSummary <- summary(gmt)
           gmtSTableList[[i]] <- gmtSummary$s.table %>%
             as.data.frame() %>%
             rownames_to_column("variable") %>%
@@ -144,7 +144,7 @@ GAMLoop <- function(
         }
 
         if (returnGeneModelSummary) {
-          gmtSummaryList[[i]] <- summary(gmt)
+          gmtSummaryList[[i]] <- gmtSummary
         }
 
         if (returnModelObject) {
@@ -152,7 +152,7 @@ GAMLoop <- function(
         }
       },
       error = function(e) {
-        failedGenes <<- append(failedGenes, ensGene) # Always track failed genes
+        failedGenes <<- append(failedGenes, ensGene)
       }
     )
 
@@ -161,31 +161,36 @@ GAMLoop <- function(
 
   close(pb)
 
-  # Remove NULL entries from lists before binding
-  gmtSummaryList <- if (returnGeneModelSummary) {
-    gmtSummaryList[!sapply(gmtSummaryList, is.null)]
-  } else {
-    NULL
-  }
-  gmtModelList <- if (returnModelObject) {
-    gmtModelList[!sapply(gmtModelList, is.null)]
-  } else {
-    NULL
+  # ── Identify which genes succeeded BEFORE removing NULLs ───────────────────
+  # Use the model list if available, otherwise fall back to summary list.
+  # This is the source of truth for which indices actually succeeded.
+  ref_list <- if (returnModelObject) gmtModelList else gmtSummaryList
+  succeededIdx <- which(!sapply(ref_list, is.null))
+
+  # ── Remove NULLs and assign names from the correct indices ─────────────────
+  if (returnGeneModelSummary) {
+    gmtSummaryList <- gmtSummaryList[succeededIdx]
+    names(gmtSummaryList) <- geneNames[succeededIdx]
   }
 
-  # Convert stored lists into data frames if required
+  if (returnModelObject) {
+    gmtModelList <- gmtModelList[succeededIdx]
+    names(gmtModelList) <- geneNames[succeededIdx]
+  }
+
+  # ── Bind data frames (NULLs in rbindlist are handled via fill = TRUE) ───────
   gmtDatPTable <- if (returnFixedEffects) {
     data.table::rbindlist(gmtPTableList, fill = TRUE)
   } else {
     NULL
   }
+
   gmtDatSTable <- if (returnSmoothEffects) {
     data.table::rbindlist(gmtSTableList, fill = TRUE)
   } else {
     NULL
   }
 
-  # Adjust p-values if required
   if (returnFixedEffects) {
     gmtDatPTable <- gmtDatPTable %>%
       group_by(variable) %>%
@@ -200,22 +205,11 @@ GAMLoop <- function(
       arrange(FDR)
   }
 
-  # Assign names only to successfully processed genes
-  if (returnGeneModelSummary) {
-    names(gmtSummaryList) <- geneNames[seq_along(gmtSummaryList)]
-  }
-  if (returnModelObject) {
-    names(gmtModelList) <- geneNames[seq_along(gmtModelList)]
-  }
+  executionTime <- Sys.time() - startTime
 
-  # Calculate total execution time
-  endTime <- Sys.time()
-  executionTime <- endTime - startTime
-
-  # Create the output list based on selected options
   results <- list(
-    `FailedGeneList` = failedGenes, # Always return failed genes
-    `ExecutionTime` = executionTime # Always return execution time
+    FailedGeneList = failedGenes,
+    ExecutionTime = executionTime
   )
   if (returnFixedEffects) {
     results[["FixedEffects"]] <- gmtDatPTable
