@@ -6,90 +6,70 @@ volcano_funcxn <- function(
   add_genes_int = NULL,
   gene_col = "hgnc_symbol"
 ) {
-  required_cols <- c("gene", "volcano_comp", "estimate", "FDR", gene_col)
-  missing_cols <- setdiff(required_cols, names(limma_output))
-
-  if (length(missing_cols) > 0) {
-    stop(
-      "Missing required column(s): ",
-      paste(missing_cols, collapse = ", "),
-      call. = FALSE
-    )
-  }
-
-  required_pkgs <- c("dplyr", "ggplot2", "ggrepel", "tibble")
-  missing_pkgs <- required_pkgs[
-    !vapply(required_pkgs, requireNamespace, logical(1), quietly = TRUE)
-  ]
-
-  if (length(missing_pkgs) > 0) {
-    stop(
-      "Install required package(s): ",
-      paste(missing_pkgs, collapse = ", "),
-      call. = FALSE
-    )
+  for (package in c("tidyverse", "ggplot2", "ggrepel")) {
+    if (!require(package, character.only = TRUE, quietly = TRUE)) {
+      install.packages(package)
+      library(package, character.only = TRUE)
+    }
   }
 
   if (is.null(coeff)) {
-    coeff <- unique(limma_output$volcano_comp)
+    coeff <- limma_output$volcano_comp %>% unique()
+  } else {
+    coeff <- coeff
   }
 
   options(ggrepel.max.overlaps = Inf)
+  # Read in file generated from extract pvalue function for model of interest
+  p_val <- limma_output
+  vol_plt_list <- list()
+  # If you want to run function for all coefficients
 
-  make_label_df <- function(df) {
-    df |>
-      dplyr::mutate(delabel = .data[[gene_col]]) |>
-      dplyr::select(gene, delabel)
-  }
-
-  vol_plt_list <- vector("list", length(coeff))
-  names(vol_plt_list) <- coeff
-
+  # running for loop for each given coefficient
   for (i in coeff) {
-    pval_coef <- limma_output |>
-      dplyr::filter(volcano_comp == i)
+    pval_coef <- subset(p_val, volcano_comp == i)
 
-    up_reg <- pval_coef |>
-      dplyr::filter(estimate > 0, FDR < fdr) |>
-      dplyr::arrange(FDR) |>
-      utils::head(n_top_gene) |>
-      make_label_df()
+    # getting all hgnc symbol for up regulated genes
+    up_reg <- head(
+      subset(pval_coef, estimate > 0 & FDR < fdr) %>% arrange(FDR),
+      n_top_gene
+    ) %>%
+      mutate(delabel = .data[[gene_col]]) %>%
+      select(gene, delabel)
 
-    down_reg <- pval_coef |>
-      dplyr::filter(estimate < 0, FDR < fdr) |>
-      dplyr::arrange(FDR) |>
-      utils::head(n_top_gene) |>
-      make_label_df()
+    # getting all hgnc symbol for down regulated genes
+    down_reg <- head(
+      subset(pval_coef, estimate < 0 & FDR < fdr) %>% arrange(FDR),
+      n_top_gene
+    ) %>%
+      mutate(delabel = .data[[gene_col]]) %>%
+      select(gene, delabel)
 
-    add_gene_reg <- if (is.null(add_genes_int)) {
-      tibble::tibble(gene = character(), delabel = character())
-    } else {
-      pval_coef |>
-        dplyr::filter(.data[[gene_col]] %in% add_genes_int) |>
-        dplyr::arrange(FDR) |>
-        utils::head(n_top_gene) |>
-        make_label_df()
-    }
+    add_gene_reg <- head(
+      pval_coef %>%
+        filter(.data[[gene_col]] %in% add_genes_int) %>%
+        arrange(FDR),
+      n_top_gene
+    ) %>%
+      mutate(delabel = .data[[gene_col]]) %>%
+      select(gene, delabel)
 
-    label_df <- dplyr::bind_rows(up_reg, down_reg, add_gene_reg) |>
-      dplyr::distinct(gene, .keep_all = TRUE)
-
-    pval_plot <- pval_coef |>
-      dplyr::left_join(label_df, by = "gene") |>
-      dplyr::mutate(
-        FDR = dplyr::if_else(FDR <= 0, .Machine$double.xmin, FDR),
-        FC.group = dplyr::case_when(
-          FDR <= fdr & estimate > 0 ~ "up",
-          FDR <= fdr & estimate < 0 ~ "down",
-          !is.na(delabel) ~ "Gene of Interest(NS)",
-          TRUE ~ "Not significant"
-        ),
-        FC.group = factor(
-          FC.group,
-          levels = c("Not significant", "Gene of Interest(NS)", "down", "up")
+    # making the dataframe to plot
+    pval_plot <- left_join(pval_coef, down_reg, by = "gene") %>%
+      left_join(., up_reg, by = "gene") %>%
+      left_join(., add_gene_reg, by = "gene") %>%
+      mutate(delabel_final = coalesce(delabel.x, delabel.y, delabel)) %>%
+      mutate(FC.group = ifelse(estimate > 0, "up", "down")) %>%
+      mutate(
+        FC.group = case_when(
+          FDR <= fdr ~ FC.group,
+          FDR > fdr & !is.na(delabel_final) ~ "Gene of Interest(NS)",
+          FDR > fdr ~ "Not significant"
         )
-      ) |>
-      dplyr::arrange(FC.group)
+      ) %>%
+      # mutate(FC.group = factor(FC.group, levels = c("Not significant", "Gene of Interest", "down", "up"))) %>%
+      arrange(desc(FC.group)) %>%
+      mutate(FDR = ifelse(FDR <= 0, FDR + 1e-320, FDR))
 
     cols <- c(
       "up" = "red",
@@ -98,28 +78,21 @@ volcano_funcxn <- function(
       "Not significant" = "grey"
     )
 
-    plt_vol <- ggplot2::ggplot(
+    # running ggplot to make volcano plot
+    plt_vol <- ggplot(
       data = pval_plot,
-      ggplot2::aes(x = estimate, y = -log10(FDR), color = FC.group)
+      aes(x = estimate, y = -log10(FDR), col = FC.group)
     ) +
-      ggplot2::geom_point(size = 3, alpha = 0.7) +
-      ggplot2::theme_classic() +
-      ggrepel::geom_text_repel(
-        ggplot2::aes(label = delabel),
-        color = "black",
-        na.rm = TRUE
-      ) +
-      ggplot2::scale_color_manual(values = cols, drop = FALSE) +
-      ggplot2::geom_vline(xintercept = 0, color = "black", linetype = 2) +
-      ggplot2::geom_hline(
-        yintercept = -log10(fdr),
-        color = "black",
-        linetype = 2
-      ) +
-      ggplot2::labs(title = i, x = "estimate", y = "-log10(FDR)", color = NULL)
+      geom_point(size = 3, alpha = 0.7) +
+      theme_classic() +
+      geom_text_repel(aes(label = delabel_final), color = "black") +
+      scale_color_manual(values = cols) +
+      geom_vline(xintercept = 0, col = "black", linetype = 2) +
+      geom_hline(yintercept = -log10(fdr), col = "black", linetype = 2) +
+      ggtitle(i)
 
     vol_plt_list[[i]] <- plt_vol
   }
 
-  vol_plt_list
+  return(vol_plt_list)
 }
