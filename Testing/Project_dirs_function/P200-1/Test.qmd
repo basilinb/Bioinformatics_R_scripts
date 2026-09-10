@@ -1,0 +1,79 @@
+---
+title: "Test Project Directories Functions"
+author: "Basilin Benson, basilinb@uw.edu"
+date: "version `r format(Sys.time(),'%B %d, %Y')`"
+output: 
+  html_document:
+    toc: yes
+    toc_float:
+      collapsed: no
+  pdf_document:
+    toc: yes
+editor_options:
+  chunk_output_type: console
+header-includes:
+  \usepackage{float}
+---
+
+```{r}
+#| include = FALSE
+knitr::opts_chunk$set(
+  fig.height = 8.5,
+  fig.width = 8.5,
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE
+)
+```
+
+# Background
+
+The purpose of this workflow is to complete basic data cleaning of metadata and RNA-seq libraries. This includes 1) removing low coverage libraries, 2) filtering rare genes, 3) removing outlying libraries and duplicates, and 4) normalizing for RNA composition.
+
+# Setup and Configuration
+
+## Load Required Packages
+
+```{r}
+#| label = "setup",
+#| message = FALSE,
+#| warning = FALSE
+##Data and figures
+#library(MOFA2)
+library(tidyverse)
+
+```
+
+## Load Visualization Functions
+
+```{r}
+source("~/Library/CloudStorage/Box-Box/Bioinformatics_R_scripts/init_project_dirs.r")
+source("~/Library/CloudStorage/Box-Box/Bioinformatics_R_scripts/init_experiment_dirs.r")
+```
+
+
+
+
+## Directory Structure Configuration
+
+```{r}
+projectNumber <- "P200-1"
+dirBoxBase <-
+  file.path("~", "Library", "CloudStorage", "Box-Box")
+dirRoot <-
+  file.path(
+    dirBoxBase,
+    "Bioinformatics_R_scripts", # Box version
+    "Testing/Project_dirs_function/",
+    # "~", "Documents", "Projects_local", # local version
+    projectNumber
+  )
+proj <- init_project_dirs(projectNumber, box_base = dirBoxBase, lab_folder = "Bioinformatics_R_scripts/Testing/Project_dirs_function")
+
+proj$root
+proj$plots
+proj$results
+
+il13_plot <- init_experiment_dirs(proj$plots, "IL13",plot_subdirs = c("GSEA","Norm"),result_subdirs = c("GSEA","Norm"))
+il13_plot$results_GSEA
+```

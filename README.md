@@ -47,6 +47,17 @@ Individual function documentation lives in [`docs/`](docs/).
 | `filter_rare` | `filter_rare.R` | Filter low-abundance genes from a `DGEList` by CPM threshold | [docs](docs/filter_rare.md) |
 | `genesetExp` | `genesetExp.R` | Summarize per-library median/mean expression over a gene set | [docs](docs/genesetExp.md) |
 
+### Annotation / gene keys
+
+| Function | File | Description | Docs |
+|----------|------|-------------|------|
+| `get_ensembl_pc_key` | `ensembl_gene_key.R` | Protein-coding gene key for a **pinned** Ensembl release; caches by release and stamps it into the data | [docs](docs/get_ensembl_pc_key.md) |
+| `get_ensembl_full_key` | `ensembl_gene_key.R` | Unfiltered BioMart key for a pinned release; the cached layer behind `get_ensembl_pc_key` | [docs](docs/get_ensembl_pc_key.md) |
+| `ensembl_gene_symbol_map` | `ensembl_gene_key.R` | Narrow a key to exactly `geneName` + `gene_symbol` (safe for un-keyed `left_join`) | [docs](docs/get_ensembl_pc_key.md) |
+| `ensembl_species_from_ids` | `ensembl_gene_key.R` | Infer mouse/human from Ensembl gene IDs, inspecting all IDs rather than the first | [docs](docs/get_ensembl_pc_key.md) |
+| `ensembl_live_release` | `ensembl_gene_key.R` | Current Ensembl release from three fallback sources; memoised, offline-tolerant | [docs](docs/get_ensembl_pc_key.md) |
+| `ensembl_release_report` | `ensembl_gene_key.R` | One-row pinned-vs-live table to print in a rendered report | [docs](docs/get_ensembl_pc_key.md) |
+
 ### Mediation / causal inference
 
 | Function | File | Description | Docs |
@@ -72,7 +83,7 @@ Individual function documentation lives in [`docs/`](docs/).
 
 | Function | File | Description | Docs |
 |----------|------|-------------|------|
-| `make_color_palette` | `make_color_palette.R` | Auto-select colorblind-safe palette with cross-session registry | [docs](docs/make_color_palette.md) |
+| `make_color_palette` | `make_color_palette.R` | Auto-select colorblind-safe palette with cross-session registry; avoids other variables' colors, extendable with your own | [docs](docs/make_color_palette.md) |
 | `scale_color_auto` / `scale_fill_auto` | `make_color_palette.R` | ggplot2 drop-in color/fill scale wrappers | [docs](docs/make_color_palette.md) |
 
 ---

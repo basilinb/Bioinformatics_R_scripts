@@ -1,0 +1,1384 @@
+---
+title: "Testing functions"
+author: "Basilin Benson, bbenson@benaroyaresearch.org"
+date: "version `r format(Sys.time(),'%B %d, %Y')`"
+output: 
+  html_document:
+    toc: yes
+    toc_float:
+      collapsed: no
+  pdf_document:
+    toc: yes
+editor_options:
+  chunk_output_type: console
+header-includes:
+  \usepackage{float}
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r load_utils, include=FALSE}
+# =============================================================================
+# file_utils.R
+#
+# A unified toolkit for caching and saving R objects, tables, and figures.
+#
+# Design decisions
+# ----------------
+#   1. Complex objects (DGEList, EList, list-of-lists, model fits, …) must use
+#      .rds. Attempting .csv / .tsv with a non-flat object errors immediately.
+#
+#   2. Figures are cached too. If the output file already exists and
+#      overwrite = FALSE, ggsave is skipped entirely.
+#
+#   3. The compute block can be passed as either:
+#        a bare { } expression  →  cache(path, { ... })
+#        a lambda / function    →  cache(path, function() { ... })
+#                                  cache(path, \() { ... })          # R 4.1+
+#      Both are detected and handled automatically.
+#
+#   4. File naming is always:  dir/project_analysis.ext
+#      Use make_path(project, analysis, ext, dir) to build paths consistently,
+#      then pass the result into cache(), save_figures(), or cache_with_figures().
+#
+# Core API
+# --------
+#   make_path()           Build a consistent path: dir/project_analysis.ext
+#                         Pass multiple ext values to get multiple paths at once.
+#
+#   cache()               Load if cached, otherwise compute + save.
+#                         Extension determines format:
+#                           .rds          → any R object
+#                           .csv / .tsv   → data.frame / tibble only
+#
+#   save_figures()        Save ggplot / patchwork to one or more files.
+#                         Skips files that already exist (overwrite = FALSE).
+#
+#   cache_with_figures()  One compute block → caches data + saves figures.
+#                         Block must return list(data = …, plot = …).
+#
+#   safe_filename()       Low-level collision-safe path builder.
+#
+# Quick reference
+# ---------------
+#
+#   ## Build paths with make_path() ────────────────────────────────────────────
+#   #   Single path
+#   make_path(project, "voom_clean",  "rds",        dirDataclean)
+#   #   → "DataClean/P01_voom_clean.rds"
+#
+#   #   Multiple extensions at once (returns named character vector)
+#   make_path(project, "results",     c("csv","rds"), dirResults)
+#   #   → c(csv = "Results/P01_results.csv", rds = "Results/P01_results.rds")
+#
+#   #   Mix data + figure paths for cache_with_figures()
+#   make_path(project, "pca",         c("pdf","png"), dirFigs)
+#   #   → c(pdf = "Figs/P01_pca.pdf", png = "Figs/P01_pca.png")
+#
+#   ## Any complex object (DGEList, EList, list-of-lists) ─────────────────────
+#   dat.voom_clean <- cache(
+#     make_path(project, "voom_clean", "rds", dirDataclean),
+#     {
+#       libs <- dat.voom$targets %>%
+#         subset(visit %notin% c("?", "Unknown")) %>%
+#         pull(libid)
+#       tmp <- dat.voom[, libs]
+#       tmp$targets <- tmp$targets %>%
+#         mutate(visit = ifelse(visit == "Screening/Enrollment", "Screening", visit)) %>%
+#         mutate(visit = factor(visit,
+#                  levels = c("Screening", "Cold A Clinic", "Cold B Home", "Visit 1")))
+#       tmp     # ← last expression is what gets cached
+#     }
+#   )
+#
+#   ## Same thing with a lambda ────────────────────────────────────────────────
+#   dat.voom_clean <- cache(
+#     make_path(project, "voom_clean", "rds", dirDataclean),
+#     function() {
+#       ...
+#       tmp
+#     }
+#   )
+#
+#   ## Flat table → csv AND rds simultaneously ─────────────────────────────────
+#   results_tbl <- cache(
+#     make_path(project, "results", c("csv", "rds"), dirResults),
+#     { compute_results(dat.voom_clean) }
+#   )
+#
+#   ## Figures only (skips if files already exist) ─────────────────────────────
+#   save_figures(
+#     p_pca,
+#     paths = make_path(project, "pca", c("pdf", "png"), dirFigs),
+#     width = 8, height = 6
+#   )
+#
+#   ## Data + figures in one call ──────────────────────────────────────────────
+#   dat.voom_clean <- cache_with_figures(
+#     data_paths   = make_path(project, "voom_clean",  "rds",          dirDataclean),
+#     figure_paths = make_path(project, "pca",         c("pdf", "png"), dirFigs),
+#     width = 8, height = 6,
+#     {
+#       obj <- build_voom(dat.raw)
+#       list(data = obj, plot = plot_pca(obj))
+#     }
+#   )
+#
+# =============================================================================
+
+
+# ── internal constants & helpers ──────────────────────────────────────────────
+
+.figure_exts <- c("pdf", "png", "svg", "eps", "tiff", "jpeg", "jpg")
+.table_exts  <- c("csv", "tsv")
+.rds_exts    <- "rds"
+.all_exts    <- c(.rds_exts, .table_exts, .figure_exts)
+
+.ext <- function(path) tolower(tools::file_ext(path))
+
+.ensure_dir <- function(path) {
+  d <- dirname(path)
+  if (!dir.exists(d)) dir.create(d, recursive = TRUE, showWarnings = FALSE)
+  invisible(d)
+}
+
+.is_flat <- function(x) is.data.frame(x) || isTRUE(inherits(x, "tbl"))
+
+# Null-coalescing (avoids rlang dependency)
+`%||%` <- function(a, b) if (!is.null(a)) a else b
+
+# Resolve expr: works for bare { } blocks and function() / \() lambdas.
+# Always evaluated in the caller's parent frame so variables are in scope.
+.resolve_expr <- function(expr, env) {
+  if (is.function(expr)) {
+    expr()                        # lambda: call it
+  } else {
+    eval(expr, envir = env)       # bare block: evaluate in caller's frame
+  }
+}
+
+
+
+# ── make_path ───────────────────────────────────────────────────────────────────────────────
+
+#' Build a consistent file path: dir/project_analysis.ext
+#'
+#' The single source of truth for file naming across your project. Always
+#' produces paths of the form \code{dir/project_analysis.ext}.
+#'
+#' When \code{ext} is a vector, one path is returned per extension, named by
+#' extension. This makes it easy to pass multiple formats to \code{cache()},
+#' \code{save_figures()}, or \code{cache_with_figures()} in one call.
+#'
+#' @param project   character  Project identifier (e.g. \code{"P01"} or
+#'                             \code{projectNumber_swab}).
+#' @param analysis  character  Descriptive analysis label
+#'                             (e.g. \code{"voom_clean"}, \code{"pca"}).
+#' @param ext       character  One or more extensions without a leading dot
+#'                             (e.g. \code{"rds"}, \code{c("csv","rds")},
+#'                             \code{c("pdf","png")}).
+#' @param dir       character  Target directory. Created if it does not exist.
+#' @return A named character vector of normalised paths, one per extension.
+#'         If only one extension is supplied the vector is unnamed.
+#'
+#' @examples
+#' \dontrun{
+#' ## Single path
+#' make_path(project, "voom_clean", "rds", dirDataclean)
+#' # "DataClean/P01_voom_clean.rds"
+#'
+#' ## Multiple extensions at once
+#' make_path(project, "results", c("csv", "rds"), dirResults)
+#' # c(csv = "Results/P01_results.csv", rds = "Results/P01_results.rds")
+#'
+#' ## Pass directly into cache()
+#' dat <- cache(
+#'   make_path(project, "voom_clean", "rds", dirDataclean),
+#'   { build_voom(dat.raw) }
+#' )
+#'
+#' ## Pass directly into save_figures()
+#' save_figures(p_pca,
+#'   make_path(project, "pca", c("pdf", "png"), dirFigs),
+#'   width = 8, height = 6)
+#'
+#' ## Both at once via cache_with_figures()
+#' dat <- cache_with_figures(
+#'   data_paths   = make_path(project, "voom_clean",  "rds",          dirDataclean),
+#'   figure_paths = make_path(project, "pca",         c("pdf", "png"), dirFigs),
+#'   width = 8, height = 6,
+#'   { list(data = build_voom(dat.raw), plot = plot_pca(obj)) }
+#' )
+#' }
+#' @export
+make_path <- function(project, analysis, ext, dir) {
+  project  <- as.character(project)
+  analysis <- as.character(analysis)
+  dir      <- as.character(dir)
+
+  if (!dir.exists(dir)) dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+
+  base  <- paste0(project, "_", analysis)
+  paths <- normalizePath(
+    file.path(dir, paste0(base, ".", ext)),
+    winslash = "/", mustWork = FALSE
+  )
+
+  # Name by extension when multiple are given; leave unnamed for a single ext
+  if (length(ext) > 1L) stats::setNames(paths, ext) else paths
+}
+
+# ── safe_filename ─────────────────────────────────────────────────────────────
+
+#' Build a collision-safe file path
+#'
+#' Creates the parent directory if needed and returns a path that will not
+#' silently overwrite an existing file (unless \code{overwrite = TRUE}).
+#'
+#' @param dir       character  Target directory.
+#' @param basename  character  Base name; any extension is stripped and
+#'                             replaced by \code{ext}.
+#' @param ext       character  Extension without leading dot (e.g. \code{"rds"}).
+#' @param overwrite logical    If TRUE return the plain path even if it exists.
+#' @param version   character  Conflict strategy:
+#'   \describe{
+#'     \item{none}{Append a timestamp only when a conflict is detected.}
+#'     \item{timestamp}{Always append a timestamp.}
+#'     \item{increment}{Append \code{_v1}, \code{_v2}, … on each conflict.}
+#'   }
+#' @return character  Normalised path (the file is NOT created by this function).
+#' @export
+safe_filename <- function(dir, basename, ext,
+                          overwrite = FALSE,
+                          version   = c("none", "timestamp", "increment")) {
+
+  version <- match.arg(version)
+  dir     <- as.character(dir)
+  if (!dir.exists(dir)) dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+
+  base <- sub("\\.[A-Za-z0-9]+$", "", as.character(basename))
+  path <- file.path(dir, paste0(base, ".", ext))
+
+  if (!overwrite && file.exists(path)) {
+    if (version == "none") {
+      path <- file.path(dir,
+                paste0(base, "_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".", ext))
+
+    } else if (version == "timestamp") {
+      path <- file.path(dir,
+                paste0(base, "_", format(Sys.time(), "%Y%m%dT%H%M%S"), ".", ext))
+
+    } else {                                                        # increment
+      esc  <- gsub("([.\\^$*+?()[{\\\\|])", "\\\\\\1", base)
+      pat  <- paste0("^", esc, "_v(\\d+)\\.", ext, "$")
+      hits <- list.files(dir, pattern = pat)
+      nv   <- if (length(hits)) {
+        max(as.integer(
+          sub(paste0("^", esc, "_v(\\d+)\\.", ext, "$"), "\\1", hits)
+        ), na.rm = TRUE) + 1L
+      } else 1L
+      path <- file.path(dir, paste0(base, "_v", nv, ".", ext))
+    }
+  }
+
+  normalizePath(path, winslash = "/", mustWork = FALSE)
+}
+
+
+# ── internal read / write ─────────────────────────────────────────────────────
+
+.read_one <- function(path, csv_read_args = list()) {
+  ext <- .ext(path)
+  switch(ext,
+    rds = readRDS(path),
+    csv = do.call(readr::read_csv,
+                  c(list(file = path, show_col_types = FALSE), csv_read_args)),
+    tsv = do.call(readr::read_tsv,
+                  c(list(file = path, show_col_types = FALSE), csv_read_args)),
+    stop("Cannot read format '.", ext, "'. Supported: rds, csv, tsv.", call. = FALSE)
+  )
+}
+
+.write_one <- function(obj, path, csv_opts = list()) {
+  ext <- .ext(path)
+  .ensure_dir(path)
+
+  switch(ext,
+
+    rds = saveRDS(obj, file = path),
+
+    csv = {
+      if (!.is_flat(obj))
+        stop(
+          "Cannot save a <", class(obj)[1L], "> to CSV.\n",
+          "  CSV and TSV support flat data.frames / tibbles only.\n",
+          "  Use a .rds path for complex objects (DGEList, EList, lists, …).",
+          call. = FALSE
+        )
+      do.call(readr::write_csv, c(list(x = obj, file = path), csv_opts))
+    },
+
+    tsv = {
+      if (!.is_flat(obj))
+        stop(
+          "Cannot save a <", class(obj)[1L], "> to TSV.\n",
+          "  CSV and TSV support flat data.frames / tibbles only.\n",
+          "  Use a .rds path for complex objects (DGEList, EList, lists, …).",
+          call. = FALSE
+        )
+      do.call(readr::write_tsv, c(list(x = obj, file = path), csv_opts))
+    },
+
+    stop("Cannot write format '.", ext, "'. Supported: rds, csv, tsv.", call. = FALSE)
+  )
+
+  message("  Saved : ", path)
+}
+
+
+# ── cache ─────────────────────────────────────────────────────────────────────
+
+#' Cache any R object — load if cached, otherwise compute and save
+#'
+#' The extension of each path in \code{paths} determines the storage format:
+#' \describe{
+#'   \item{\code{.rds}}{Works for \emph{any} R object — DGEList, EList,
+#'     list-of-lists, model fits, data.frames, …}
+#'   \item{\code{.csv} / \code{.tsv}}{Flat data.frames / tibbles \emph{only}.
+#'     Passing a complex object errors immediately with a clear message.}
+#' }
+#'
+#' Multiple paths can be supplied; on a cache miss the object is written to
+#' every format. On a cache hit the first existing file is read (preferring
+#' \code{.rds} for round-trip fidelity).
+#'
+#' The compute block is only evaluated on a cache miss and can be supplied as:
+#' \itemize{
+#'   \item A bare \code{\{ \}} expression: \code{cache(path, \{ ... \})}
+#'   \item A lambda / anonymous function:
+#'         \code{cache(path, function() \{ ... \})} or
+#'         \code{cache(path, \backslash()\{ ... \})} (R ≥ 4.1)
+#' }
+#'
+#' @param paths         character vector  One or more output paths.
+#' @param expr          Unevaluated \code{\{ block \}} or \code{function()}
+#'                      whose last expression is the object to cache.
+#' @param overwrite     logical  If TRUE always recompute and overwrite all paths.
+#' @param verbose       logical  Emit messages on load / save.
+#' @param csv_opts      list  Extra args forwarded to \code{readr::write_csv} /
+#'                      \code{write_tsv}.
+#' @param csv_read_args list  Extra args forwarded to \code{readr::read_csv} /
+#'                      \code{read_tsv}.
+#' @return The cached or freshly-computed object (invisibly).
+#'
+#' @examples
+#' \dontrun{
+#' ## ── DGEList / EList / any complex object ──────────────────────────────────
+#' dat.voom_clean <- cache(
+#'   make_path(project, "voom_clean", "rds", dirDataclean),
+#'   {
+#'     libs <- dat.voom$targets %>%
+#'       subset(visit %notin% c("?", "Unknown")) %>%
+#'       pull(libid)
+#'     tmp <- dat.voom[, libs]
+#'     tmp$targets <- tmp$targets %>%
+#'       mutate(visit = ifelse(visit == "Screening/Enrollment", "Screening", visit)) %>%
+#'       mutate(visit = factor(visit,
+#'                levels = c("Screening", "Cold A Clinic", "Cold B Home", "Visit 1")))
+#'     tmp
+#'   }
+#' )
+#'
+#' ## ── Same with a lambda ────────────────────────────────────────────────────
+#' dat.voom_clean <- cache(
+#'   make_path(project, "voom_clean", "rds", dirDataclean),
+#'   function() {
+#'     ...
+#'     tmp
+#'   }
+#' )
+#'
+#' ## ── Flat table → csv + rds simultaneously ─────────────────────────────────
+#' results_tbl <- cache(
+#'   make_path(project, "results", c("csv", "rds"), dirResults),
+#'   { compute_results(dat.voom_clean) }
+#' )
+#'
+#' ## ── List of lists ─────────────────────────────────────────────────────────
+#' model_fits <- cache(
+#'   make_path(project, "model_fits", "rds", dirResults),
+#'   { run_all_models(dat.voom_clean) }
+#' )
+#' }
+#' @export
+cache <- function(paths,
+                  expr,
+                  overwrite     = FALSE,
+                  verbose       = TRUE,
+                  csv_opts      = list(),
+                  csv_read_args = list()) {
+
+  paths <- as.character(paths)
+  if (!length(paths))
+    stop("`paths` must contain at least one file path.", call. = FALSE)
+
+  exts <- .ext(paths)
+  bad  <- setdiff(exts, c(.rds_exts, .table_exts))
+  if (length(bad))
+    stop("Unsupported extension(s) for cache(): ", paste0(".", bad, collapse = ", "),
+         "\nFor figures use save_figures().", call. = FALSE)
+
+  # ── Load (cache hit) ────────────────────────────────────────────────────────
+  if (!overwrite) {
+    rds_hit   <- paths[exts %in% .rds_exts & file.exists(paths)]
+    any_hit   <- paths[file.exists(paths)]
+    load_from <- if (length(rds_hit)) rds_hit[1L] else
+                 if (length(any_hit)) any_hit[1L] else NULL
+
+    if (!is.null(load_from)) {
+      if (verbose) message("Loading cached: ", load_from)
+      return(invisible(.read_one(load_from, csv_read_args)))
+    }
+  }
+
+  # ── Compute (cache miss) ────────────────────────────────────────────────────
+  if (verbose) message("Cache miss — computing ...")
+
+  # Support both bare { } block and function() / \() lambda
+  expr_sub <- substitute(expr)
+  obj <- if (is.function(expr)) {
+    expr()
+  } else {
+    eval(expr_sub, envir = parent.frame())
+  }
+
+  if (is.null(obj))
+    warning("cache() expression returned NULL — nothing will be saved.", call. = FALSE)
+
+  # ── Save to every requested path ────────────────────────────────────────────
+  for (p in paths) .write_one(obj, p, csv_opts)
+
+  invisible(obj)
+}
+
+
+# ── save_figures ──────────────────────────────────────────────────────────────
+
+#' Save a ggplot / patchwork object to one or more files
+#'
+#' When \code{overwrite = FALSE} (the default), any output file that already
+#' exists on disk is skipped — \code{ggsave} is not called for that path.
+#' Set \code{overwrite = TRUE} to force re-rendering regardless.
+#'
+#' Supported extensions: \code{pdf}, \code{png}, \code{svg}, \code{eps},
+#' \code{tiff}, \code{jpeg} / \code{jpg}.
+#'
+#' @param plot      A ggplot or patchwork object.
+#' @param paths     character vector  One or more output paths.
+#'                  Extension sets the device. Mix formats freely:
+#'                  \code{c("Figs/pca.pdf", "Figs/pca.png")}
+#' @param width     numeric  Plot width.
+#' @param height    numeric  Plot height.
+#' @param units     character \code{"in"} (default), \code{"cm"}, or \code{"mm"}.
+#' @param dpi       numeric  Resolution for raster formats (default 300).
+#' @param overwrite logical  If FALSE, skip paths whose file already exists.
+#' @param verbose   logical  Emit a message for each file saved or skipped.
+#' @param ...       Additional arguments forwarded to \code{ggplot2::ggsave()}.
+#' @return Named list of output paths (invisibly), keyed by extension.
+#'
+#' @examples
+#' \dontrun{
+#' ## Single format
+#' save_figures(p_pca,
+#'              make_path(project, "pca", "pdf", dirFigs),
+#'              width = 8, height = 6)
+#'
+#' ## Multiple formats in one call
+#' save_figures(
+#'   p_pca,
+#'   paths = make_path(project, "pca", c("pdf", "png"), dirFigs),
+#'   width  = 8, height = 6
+#' )
+#' }
+#' @importFrom ggplot2 ggsave
+#' @export
+save_figures <- function(plot,
+                         paths,
+                         width     = NA,
+                         height    = NA,
+                         units     = "in",
+                         dpi       = 300,
+                         overwrite = FALSE,
+                         verbose   = TRUE,
+                         ...) {
+
+  if (is.null(plot)) stop("`plot` is NULL.", call. = FALSE)
+  paths <- as.character(paths)
+
+  exts <- .ext(paths)
+  bad  <- setdiff(exts, .figure_exts)
+  if (length(bad))
+    stop("Unsupported figure extension(s): ", paste0(".", bad, collapse = ", "),
+         "\nSupported: ", paste0(".", .figure_exts, collapse = ", "), call. = FALSE)
+
+  saved <- vector("list", length(paths))
+
+  for (i in seq_along(paths)) {
+    p <- paths[i]
+
+    # ── Cache hit: skip ───────────────────────────────────────────────────────
+    if (!overwrite && file.exists(p)) {
+      if (verbose) message("  Figure exists (skipping): ", p)
+      saved[[i]] <- p
+      next
+    }
+
+    # ── Cache miss: render ────────────────────────────────────────────────────
+    .ensure_dir(p)
+    ggplot2::ggsave(
+      filename = p,
+      plot     = plot,
+      device   = exts[i],
+      width    = width,
+      height   = height,
+      units    = units,
+      dpi      = dpi,
+      ...
+    )
+    if (verbose) message("  Figure saved: ", p)
+    saved[[i]] <- p
+  }
+
+  invisible(stats::setNames(saved, exts))
+}
+
+
+# ── cache_with_figures ────────────────────────────────────────────────────────
+
+#' Cache data AND save figures in one call
+#'
+#' On a cache miss the compute block is evaluated once. The block must return
+#' a named list:
+#' \describe{
+#'   \item{\code{$data}}{The object to cache (required).}
+#'   \item{\code{$plot}}{A single ggplot / patchwork saved to all
+#'     \code{figure_paths} (when \code{figure_paths} is a plain character
+#'     vector).}
+#'   \item{\code{$plots}}{A \emph{named} list of plots (when
+#'     \code{figure_paths} is a named list keyed by plot name).}
+#' }
+#'
+#' Figure caching follows \code{save_figures()} — existing figure files are
+#' skipped when \code{overwrite = FALSE}.
+#'
+#' On a cache hit only the data is loaded. If you want to regenerate figures
+#' on every run regardless, call \code{save_figures()} separately with
+#' \code{overwrite = TRUE}.
+#'
+#' The compute block accepts both a bare \code{\{ \}} expression and a
+#' \code{function()} / \code{\backslash()} lambda.
+#'
+#' @param data_paths    character vector  Paths for the data cache.
+#' @param figure_paths  character vector \emph{or} named list.
+#'   \itemize{
+#'     \item Plain vector → \code{result$plot} saved to all paths.
+#'     \item Named list   → each name matches a key in \code{result$plots};
+#'           value is the character vector of paths for that plot.
+#'   }
+#' @param expr          Unevaluated \code{\{ block \}} or \code{function()}
+#'                      returning \code{list(data = …, plot = …)}.
+#' @param overwrite     logical  If TRUE recompute data and overwrite all files.
+#'                      Figures are also re-rendered when TRUE.
+#' @param verbose       logical
+#' @param width,height,units,dpi  Forwarded to \code{save_figures()}.
+#' @param csv_opts,csv_read_args  Forwarded to internal read/write helpers.
+#' @param ...           Extra args forwarded to \code{ggplot2::ggsave()}.
+#' @return The cached \code{$data} object (invisibly).
+#'
+#' @examples
+#' \dontrun{
+#' ## ── Single plot ───────────────────────────────────────────────────────────
+#' dat.voom_clean <- cache_with_figures(
+#'   data_paths   = make_path(project, "voom_clean",  "rds",          dirDataclean),
+#'   figure_paths = make_path(project, "pca",         c("pdf", "png"), dirFigs),
+#'   width = 8, height = 6,
+#'   {
+#'     obj <- build_voom(dat.raw)
+#'     list(data = obj, plot = plot_pca(obj))
+#'   }
+#' )
+#'
+#' ## ── Multiple plots (named list of figure_paths) ───────────────────────────
+#' dat.voom_clean <- cache_with_figures(
+#'   data_paths   = make_path(project, "voom_clean",  "rds",          dirDataclean),
+#'   figure_paths = list(
+#'     pca     = make_path(project, "pca",     c("pdf", "png"), dirFigs),
+#'     heatmap = make_path(project, "heatmap", "pdf",           dirFigs)
+#'   ),
+#'   width = 8, height = 6,
+#'   {
+#'     obj <- build_voom(dat.raw)
+#'     list(
+#'       data  = obj,
+#'       plots = list(
+#'         pca     = plot_pca(obj),
+#'         heatmap = plot_heatmap(obj)
+#'       )
+#'     )
+#'   }
+#' )
+#'
+#' ## ── Lambda syntax ─────────────────────────────────────────────────────────
+#' dat.voom_clean <- cache_with_figures(
+#'   data_paths   = make_path(project, "voom_clean", "rds", dirDataclean),
+#'   figure_paths = make_path(project, "pca",        "pdf", dirFigs),
+#'   function() {
+#'     obj <- build_voom(dat.raw)
+#'     list(data = obj, plot = plot_pca(obj))
+#'   }
+#' )
+#' }
+#' @export
+cache_with_figures <- function(data_paths,
+                               figure_paths  = NULL,
+                               expr,
+                               overwrite     = FALSE,
+                               verbose       = TRUE,
+                               width         = NA,
+                               height        = NA,
+                               units         = "in",
+                               dpi           = 300,
+                               csv_opts      = list(),
+                               csv_read_args = list(),
+                               ...) {
+
+  data_paths <- as.character(data_paths)
+
+  # ── Cache hit: load data and return early ───────────────────────────────────
+  if (!overwrite) {
+    exts      <- .ext(data_paths)
+    rds_hit   <- data_paths[exts %in% .rds_exts & file.exists(data_paths)]
+    any_hit   <- data_paths[file.exists(data_paths)]
+    load_from <- if (length(rds_hit)) rds_hit[1L] else
+                 if (length(any_hit)) any_hit[1L] else NULL
+
+    if (!is.null(load_from)) {
+      if (verbose) message("Loading cached: ", load_from)
+      return(invisible(.read_one(load_from, csv_read_args)))
+    }
+  }
+
+  # ── Cache miss: compute ──────────────────────────────────────────────────────
+  if (verbose) message("Cache miss — computing ...")
+
+  expr_sub <- substitute(expr)
+  result <- if (is.function(expr)) {
+    expr()
+  } else {
+    eval(expr_sub, envir = parent.frame())
+  }
+
+  # ── Validate result structure ────────────────────────────────────────────────
+  if (!is.list(result) || !"data" %in% names(result))
+    stop(
+      "The expr block must return a named list with at least a `$data` element.\n",
+      "  Bare block : list(data = my_obj, plot = my_plot)\n",
+      "  Multi-plot : list(data = my_obj, plots = list(pca = p1, heatmap = p2))",
+      call. = FALSE
+    )
+
+  obj <- result$data
+
+  # ── Save data ────────────────────────────────────────────────────────────────
+  for (p in data_paths) .write_one(obj, p, csv_opts)
+
+  # ── Save figures ─────────────────────────────────────────────────────────────
+  if (!is.null(figure_paths)) {
+
+    if (is.list(figure_paths)) {
+      # Named list: each name → a plot in result$plots
+      if (!"plots" %in% names(result))
+        stop(
+          "figure_paths is a named list but the expr block returned no `$plots` element.\n",
+          "  Return: list(data = …, plots = list(pca = p1, heatmap = p2))",
+          call. = FALSE
+        )
+      for (nm in names(figure_paths)) {
+        if (!nm %in% names(result$plots))
+          stop("Plot '", nm, "' not found in result$plots. ",
+               "Available: ", paste(names(result$plots), collapse = ", "),
+               call. = FALSE)
+        save_figures(
+          result$plots[[nm]],
+          paths     = as.character(figure_paths[[nm]]),
+          width     = width, height = height, units = units, dpi = dpi,
+          overwrite = overwrite, verbose = verbose, ...
+        )
+      }
+
+    } else {
+      # Plain vector: save result$plot (or first element of result$plots)
+      plt <- result$plot %||% result$plots[[1L]]
+      if (is.null(plt))
+        stop(
+          "figure_paths was supplied but the expr block returned neither ",
+          "`$plot` nor `$plots`.\n",
+          "  Return: list(data = …, plot = my_plot)",
+          call. = FALSE
+        )
+      save_figures(
+        plt,
+        paths     = as.character(figure_paths),
+        width     = width, height = height, units = units, dpi = dpi,
+        overwrite = overwrite, verbose = verbose, ...
+      )
+    }
+  }
+
+  invisible(obj)
+}
+
+```
+
+```{r test_load_utils}
+# =============================================================================
+# file_utils_examples.R
+#
+# Self-contained examples you can run top-to-bottom to verify file_utils.R
+# works correctly. Uses only base R + ggplot2 + tibble — no Bioconductor
+# needed, so it runs anywhere.
+#
+# Run the whole script once  → everything computes and saves.
+# Run it a second time       → everything loads from cache, nothing recomputes.
+# =============================================================================
+
+#source("file_utils.R")   # adjust path if needed
+
+library(ggplot2)
+library(tibble)
+library(dplyr)
+
+
+# ── 0.  Project-level variables ───────────────────────────────────────────────
+# These mirror how you'd set things up at the top of a real analysis script.
+
+project <- "P01"                  # projectNumber_swab equivalent
+
+dirDataclean <- "Testing/DataClean"
+dirResults   <- "Testing/Results"
+dirFigs      <- "Testing/Figs"
+
+# All directories are created automatically by make_path() / cache() /
+# save_figures() — nothing to do here.
+
+
+# =============================================================================
+# 1.  make_path() — verify the naming convention
+# =============================================================================
+cat("\n── 1. make_path() ──────────────────────────────────────────────────────\n")
+
+# Single extension → plain (unnamed) character string
+p_single <- make_path(project, "voom_clean", "rds", dirDataclean)
+cat("Single  :", p_single, "\n")
+# Expected: test_out/DataClean/P01_voom_clean.rds
+
+# Multiple extensions → named character vector
+p_multi <- make_path(project, "results", c("csv", "rds"), dirResults)
+cat("Multi   :", p_multi, "\n")
+# Expected: csv = ".../P01_results.csv"   rds = ".../P01_results.rds"
+
+# Figure paths
+p_figs <- make_path(project, "pca", c("pdf", "png"), dirFigs)
+cat("Figures :", p_figs, "\n")
+
+
+# =============================================================================
+# 2.  cache() — flat data.frame → csv + rds
+# =============================================================================
+cat("\n── 2. cache() — flat table ─────────────────────────────────────────────\n")
+
+# This block runs once; on the second run it just reads the csv back.
+results_tbl <- cache(
+  make_path(project, "results", c("csv", "rds"), dirResults),
+  {
+    cat("  (computing results_tbl ...)\n")
+    tibble(
+      gene       = paste0("gene_", 1:10),
+      logFC      = rnorm(10),
+      adj.P.Val  = runif(10)
+    )
+  }
+)
+
+cat("Loaded results_tbl — rows:", nrow(results_tbl),
+    " cols:", ncol(results_tbl), "\n")
+print(results_tbl)
+
+
+# =============================================================================
+# 3.  cache() — complex object (list-of-lists, stand-in for DGEList)
+# =============================================================================
+cat("\n── 3. cache() — complex object (list-of-lists) ─────────────────────────\n")
+
+# Simulates an EList / DGEList: a list with multiple components.
+# Must use .rds — trying .csv here would error with a clear message.
+model_obj <- cache(
+  make_path(project, "model_fits", "rds", dirResults),
+  {
+    cat("  (fitting models ...)\n")
+    list(
+      counts  = matrix(rpois(50, 10), nrow = 10,
+                       dimnames = list(paste0("gene_", 1:10),
+                                       paste0("sample_", 1:5))),
+      targets = tibble(sample = paste0("sample_", 1:5),
+                       group  = rep(c("A", "B"), c(3, 2))),
+      fit     = list(coefficients = rnorm(10), df.residual = 4L)
+    )
+  }
+)
+
+cat("Loaded model_obj — names:", paste(names(model_obj), collapse = ", "), "\n")
+cat("counts dim:", dim(model_obj$counts), "\n")
+
+
+# =============================================================================
+# 4.  save_figures() — cache-aware: skips if files exist
+# =============================================================================
+cat("\n── 4. save_figures() — pdf + png ───────────────────────────────────────\n")
+
+p_scatter <- ggplot(results_tbl, aes(x = logFC, y = -log10(adj.P.Val))) +
+  geom_point(colour = "steelblue", size = 3) +
+  labs(title = paste(project, "— Volcano plot"),
+       x = "log2 Fold Change", y = "-log10 adj.P") +
+  theme_bw()
+
+save_figures(
+  p_scatter,
+  paths  = make_path(project, "volcano", c("pdf", "png"), dirFigs),
+  width  = 6,
+  height = 5
+)
+# First run  → "Figure saved: ..."
+# Second run → "Figure exists (skipping): ..."
+
+
+# =============================================================================
+# 5.  cache_with_figures() — data + single plot in one call
+# =============================================================================
+cat("\n── 5. cache_with_figures() — single plot ───────────────────────────────\n")
+
+# The { } block is only evaluated on a cache miss.
+# On a hit, data is loaded and figures are skipped if they exist.
+clean_data <- cache_with_figures(
+  data_paths   = make_path(project, "clean_data",  "rds",          dirDataclean),
+  figure_paths = make_path(project, "clean_pca",   c("pdf", "png"), dirFigs),
+  width = 6, height = 5,
+  {
+    cat("  (cleaning data and building PCA plot ...)\n")
+
+    # Simulate a cleaned dataset
+    df <- tibble(
+      sample = paste0("sample_", 1:20),
+      group  = rep(c("Control", "Treatment"), 10),
+      PC1    = rnorm(20),
+      PC2    = rnorm(20)
+    )
+
+    p <- ggplot(df, aes(x = PC1, y = PC2, colour = group)) +
+      geom_point(size = 3) +
+      labs(title = paste(project, "— PCA")) +
+      theme_bw()
+
+    list(data = df, plot = p)   # ← must return list(data = , plot = )
+  }
+)
+
+cat("Loaded clean_data — rows:", nrow(clean_data), "\n")
+print(clean_data)
+
+
+# =============================================================================
+# 6.  cache_with_figures() — data + MULTIPLE plots (named list)
+# =============================================================================
+cat("\n── 6. cache_with_figures() — multiple plots ────────────────────────────\n")
+
+multi_result <- cache_with_figures(
+  data_paths   = make_path(project, "multi_analysis", "rds", dirResults),
+  figure_paths = list(
+    volcano = make_path(project, "multi_volcano", c("pdf", "png"), dirFigs),
+    boxplot = make_path(project, "multi_boxplot", "pdf",           dirFigs)
+  ),
+  width = 6, height = 5,
+  {
+    cat("  (running multi-figure analysis ...)\n")
+
+    df <- tibble(
+      gene   = rep(paste0("gene_", 1:5), each = 4),
+      group  = rep(c("A", "A", "B", "B"), 5),
+      expr   = rnorm(20, mean = 5, sd = 1),
+      logFC  = rnorm(20),
+      pval   = runif(20)
+    )
+
+    p_volc <- ggplot(df, aes(x = logFC, y = -log10(pval))) +
+      geom_point(colour = "tomato") +
+      labs(title = paste(project, "— Multi volcano")) +
+      theme_bw()
+
+    p_box <- ggplot(df, aes(x = group, y = expr, fill = group)) +
+      geom_boxplot() +
+      labs(title = paste(project, "— Expression by group")) +
+      theme_bw()
+
+    list(
+      data  = df,
+      plots = list(volcano = p_volc, boxplot = p_box)  # names must match figure_paths
+    )
+  }
+)
+
+cat("Loaded multi_result — rows:", nrow(multi_result), "\n")
+
+
+# =============================================================================
+# 7.  cache() with a lambda instead of a bare { } block
+# =============================================================================
+cat("\n── 7. cache() — lambda syntax ──────────────────────────────────────────\n")
+
+# Useful when the computation is defined elsewhere or you prefer the style.
+make_summary <- function() {
+  cat("  (computing summary via lambda ...)\n")
+  tibble(
+    metric = c("mean_logFC", "n_sig"),
+    value  = c(mean(results_tbl$logFC),
+               sum(results_tbl$adj.P.Val < 0.05))
+  )
+}
+
+summary_tbl <- cache(
+  make_path(project, "summary", c("csv", "rds"), dirResults),
+  make_summary          # pass the function directly — no () needed
+)
+
+cat("Loaded summary_tbl:\n")
+print(summary_tbl)
+
+
+# =============================================================================
+# 8.  overwrite = TRUE — force recompute even if cache exists
+# =============================================================================
+cat("\n── 8. overwrite = TRUE ─────────────────────────────────────────────────\n")
+
+fresh_tbl <- cache(
+  make_path(project, "results", c("csv", "rds"), dirResults),
+  {
+    cat("  (recomputing — overwrite = TRUE forces this)\n")
+    tibble(
+      gene      = paste0("gene_", 1:10),
+      logFC     = rnorm(10),
+      adj.P.Val = runif(10)
+    )
+  },
+  overwrite = TRUE
+)
+
+cat("Recomputed fresh_tbl — rows:", nrow(fresh_tbl), "\n")
+
+
+# =============================================================================
+# 9.  Error demo — complex object to CSV (should error clearly)
+# =============================================================================
+cat("\n── 9. Error demo — complex object to CSV ───────────────────────────────\n")
+
+tryCatch(
+  cache(
+    make_path(project, "bad_example", "csv", dirResults),
+    {
+      list(a = 1, b = 2)   # list cannot be written to CSV
+    },
+    overwrite = TRUE
+  ),
+  error = function(e) cat("Expected error caught:\n ", conditionMessage(e), "\n")
+)
+
+
+# =============================================================================
+# 10. Check all output files were created
+# =============================================================================
+cat("\n── 10. Output files ────────────────────────────────────────────────────\n")
+
+all_files <- list.files("Testing", recursive = TRUE, full.names = TRUE)
+cat(paste(" ", all_files, collapse = "\n"), "\n")
+```
+
+```{r}
+# r
+#' Create a safe filename in a directory (with optional versioning)
+#'
+#' Creates the directory if needed and returns a filepath that does not clobber
+#' existing files unless overwrite = TRUE. Supports "none" (append timestamp on conflict),
+#' "timestamp" (always add timestamp when conflict), and "increment" (append _vN).
+#'
+#' @param dir character Directory to save into.
+#' @param basename character Base filename (extension will be removed if provided).
+#' @param ext character File extension (without dot).
+#' @param overwrite logical If TRUE, overwrite existing file.
+#' @param version character One of "none", "timestamp", "increment".
+#' @return character Normalized file path (not created yet).
+#' @export
+safe_filename <- function(dir, basename, ext, overwrite = FALSE, version = c("none", "timestamp", "increment")) {
+  version <- match.arg(version)
+  dir <- as.character(dir)
+  if (!dir.exists(dir)) dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+  base <- sub("\\.[A-Za-z0-9]+$", "", as.character(basename))
+  path <- file.path(dir, paste0(base, ".", ext))
+
+  if (!overwrite && file.exists(path)) {
+    if (version == "none") {
+      ts <- format(Sys.time(), "%Y%m%d_%H%M%S")
+      path <- file.path(dir, paste0(base, "_", ts, ".", ext))
+    } else if (version == "timestamp") {
+      path <- file.path(dir, paste0(base, "_", format(Sys.time(), "%Y%m%dT%H%M%S"), ".", ext))
+    } else if (version == "increment") {
+      # escape regex chars in base
+      esc_base <- gsub("([.\\^$*+?()[{\\\\|])", "\\\\\\1", base)
+      pattern <- paste0("^", esc_base, "_v(\\d+)\\.", ext, "$")
+      existing <- list.files(dir, pattern = pattern)
+      if (length(existing)) {
+        nums <- as.integer(gsub(paste0("^", esc_base, "_v(\\d+)\\.", ext, "$"), "\\1", existing))
+        next_v <- max(nums, na.rm = TRUE) + 1L
+      } else {
+        next_v <- 1L
+      }
+      path <- file.path(dir, paste0(base, "_v", next_v, ".", ext))
+    }
+  }
+
+  normalizePath(path, winslash = "/", mustWork = FALSE)
+}
+
+#' Save a ggplot/patchwork object to one or more formats
+#'
+#' @param plot ggplot/patchwork object (required).
+#' @param basename character Base filename (no extension).
+#' @param dir character Directory to save plots into.
+#' @param formats character Vector of formats, e.g. c("pdf","png").
+#' @param width,height,units,dpi passed to ggplot2::ggsave.
+#' @param overwrite logical If TRUE overwrite existing files.
+#' @param version character Versioning strategy passed to safe_filename.
+#' @param ... Additional args forwarded to ggplot2::ggsave.
+#' @return named list of saved file paths (invisibly).
+#' @importFrom ggplot2 ggsave
+#' @export
+save_plot <- function(plot, basename, dir = "Figs", formats = c("pdf", "png"),
+                      units = "in", dpi = 300,
+                      overwrite = FALSE, version = c("none", "timestamp", "increment"), ...) {
+  if (is.null(plot)) stop("plot is NULL", call. = FALSE)
+  version <- match.arg(version)
+  saved <- list()
+  for (fmt in formats) {
+    path <- safe_filename(dir = dir, basename = basename, ext = fmt, overwrite = overwrite, version = version)
+    ggplot2::ggsave(filename = path, plot = plot,
+                    units = units, dpi = dpi, device = fmt, ...)
+    saved[[fmt]] <- path
+  }
+  invisible(saved)
+}
+
+#' Save or Load a data.frame or tibble to csv/tsv/rds
+#'
+#' @param tbl data.frame or tibble (required).
+#' @param basename character Base filename (no extension).
+#' @param dir character Directory to save tables into.
+#' @param formats character Vector of formats, e.g. c("csv","rds").
+#' @param overwrite logical If TRUE overwrite existing files.
+#' @param version character Versioning strategy passed to safe_filename.
+#' @param csv_opts list Additional options forwarded to readr::write_csv/write_tsv.
+#' @return named list of saved file paths (invisibly).
+#' @importFrom readr write_csv write_tsv
+#' @export
+# r
+# Save-or-load table: if overwrite = FALSE and load_if_exists = TRUE,
+# existing files are read (and optionally assigned) without forcing tbl when tbl
+# is an unbound symbol.
+save_or_load_table <- function(tbl, basename, dir = "Results",
+                               formats = c("csv", "rds"),
+                               overwrite = FALSE,
+                               version = c("none", "timestamp", "increment"),
+                               csv_opts = list(),
+                               load_if_exists = FALSE,
+                               csv_read_args = list(),
+                               assign_loaded = TRUE,
+                               assign_env = parent.frame()) {
+  version <- match.arg(version)
+  dir <- as.character(dir)
+  if (!dir.exists(dir)) dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+
+  # capture the expression the caller passed for tbl
+  tbl_expr <- substitute(tbl)
+
+  # derive a variable name to use when assigning loaded objects
+  tbl_name <- if (is.symbol(tbl_expr)) {
+    as.character(tbl_expr)
+  } else if (is.character(tbl_expr) && length(tbl_expr) == 1L) {
+    # literal string passed e.g. tbl = "myname"
+    tbl_expr
+  } else {
+    # fallback to basename
+    sub("\\.[A-Za-z0-9]+$", "", as.character(basename))
+  }
+
+  # Try to evaluate tbl in caller safely; if evaluation errors, treat as "no value provided"
+  tbl_value <- NULL
+  eval_ok <- FALSE
+  tbl_attempt <- try(eval(tbl_expr, envir = parent.frame()), silent = TRUE)
+  if (!inherits(tbl_attempt, "try-error")) {
+    # if caller passed a string literal, treat as name-only (no writing)
+    if (is.character(tbl_attempt) && length(tbl_attempt) == 1L) {
+      tbl_name <- tbl_attempt
+      eval_ok <- FALSE
+    } else if (is.data.frame(tbl_attempt) || tibble::is_tibble(tbl_attempt)) {
+      tbl_value <- tbl_attempt
+      eval_ok <- TRUE
+    } else {
+      # evaluated to something else -> error when user intended to write
+      stop("`tbl` must be a data.frame/tibble when providing data to write", call. = FALSE)
+    }
+  } else {
+    # evaluation failed (e.g. unbound symbol) -> treat as not provided
+    eval_ok <- FALSE
+  }
+
+  will_write <- isTRUE(eval_ok)
+
+  saved <- list()
+  loaded <- list()
+  base_name <- sub("\\.[A-Za-z0-9]+$", "", as.character(basename))
+
+  for (fmt in formats) {
+    intended <- file.path(dir, paste0(base_name, ".", fmt))
+
+    # If an existing file is present and caller asked to load instead of overwrite,
+    # read it and (optionally) assign into caller's env, without forcing tbl_value.
+    if (!overwrite && load_if_exists && file.exists(intended) && fmt %in% c("rds", "csv", "tsv")) {
+      if (fmt == "rds") {
+        obj <- readRDS(intended)
+      } else if (fmt == "csv") {
+        obj <- do.call(readr::read_csv, c(list(file = intended), csv_read_args))
+      } else { # tsv
+        obj <- do.call(readr::read_tsv, c(list(file = intended), csv_read_args))
+      }
+      saved[[fmt]] <- normalizePath(intended, winslash = "/", mustWork = TRUE)
+      loaded[[fmt]] <- obj
+      if (isTRUE(assign_loaded)) assign(tbl_name, obj, envir = assign_env)
+      next
+    }
+
+    # Otherwise we must write — ensure we have data to write
+    if (!will_write) {
+      stop("No table object provided to write (tbl is missing or unbound). Set tbl to a data.frame/tibble or set load_if_exists = TRUE to read existing files.", call. = FALSE)
+    }
+
+    # determine safe target (versioning/overwrite handled)
+    path <- safe_filename(dir = dir, basename = basename, ext = fmt, overwrite = overwrite, version = version)
+
+    if (fmt == "csv") {
+      do.call(readr::write_csv, c(list(x = tbl_value, file = path), csv_opts))
+    } else if (fmt == "tsv") {
+      do.call(readr::write_tsv, c(list(x = tbl_value, file = path), csv_opts))
+    } else if (fmt == "rds") {
+      saveRDS(tbl_value, file = path)
+    } else {
+      stop("unsupported table format: ", fmt, call. = FALSE)
+    }
+
+    saved[[fmt]] <- normalizePath(path, winslash = "/", mustWork = FALSE)
+  }
+
+  if (length(loaded) == 0L) {
+    invisible(saved)
+  } else {
+    invisible(list(paths = saved, loaded = loaded))
+  }
+}
+
+#' Save both plot and table (convenience wrapper)
+#'
+#' Calls save_plot() and/or save_or_load_table() and returns a list with $plots and $tables
+#'
+#' @param plot optional ggplot object
+#' @param table optional data.frame/tibble
+#' @param basename character Base filename
+#' @param plot_dir,table_dir directories
+#' @param plot_formats,table_formats format vectors
+#' @param overwrite logical
+#' @param version character Versioning strategy
+#' @param plot_args list Additional args to pass to save_plot (will be spliced)
+#' @param table_args list Additional args to pass to save_or_load_table (will be spliced)
+#' @return list with elements $plots and/or $tables (invisibly)
+#' @export
+save_outputs <- function(plot = NULL, table = NULL, basename,
+                         plot_dir = "Figs", table_dir = "Results",
+                         plot_formats = c("pdf", "png"), table_formats = c("csv", "rds"),
+                         overwrite = FALSE, version = c("none", "timestamp", "increment"),
+                         plot_args = list(), table_args = list()) {
+  version <- match.arg(version)
+  results <- list()
+  if (!is.null(plot)) {
+    results$plots <- do.call(save_plot, c(list(plot = plot, basename = basename, dir = plot_dir,
+                                                formats = plot_formats, overwrite = overwrite, version = version), plot_args))
+  }
+  if (!is.null(table)) {
+    results$tables <- do.call(save_or_load_table, c(list(tbl = table, basename = basename, dir = table_dir,
+                                                 formats = table_formats, overwrite = overwrite, version = version), table_args))
+  }
+  invisible(results)
+}
+```
+
+
+
+# Lets test the functions we just defined. We will create a simple ggplot and a data frame, then use our save_plot and save_or_load_table functions to save them in different formats. Finally, we will check that the files were created successfully.
+```{r}
+library(ggplot2)
+library(readr)
+library(tibble)
+# Create a simple ggplot
+p <- ggplot(mtcars, aes(x = mpg, y = wt)) + geom_point() + ggtitle("MPG vs Weight")
+# Create a simple data frame
+tbl <- mtcars %>% rownames_to_column("model") %>% as_tibble()
+# Save the plot in PDF and PNG formats
+plot_paths <- save_plot(p, basename = "mtcars_scatter", dir = "Testing/Figs", formats = c("pdf"), overwrite = FALSE,height=12,width=15,version = "increment")
+print(plot_paths)
+# Save the table in CSV and RDS formats
+table_paths <- save_or_load_table(tbl, basename = "mtcars_table", dir = "Results", formats = c("rds"), overwrite = TRUE)
+print(table_paths)
+
+# TEST save_outputs to save both at once with versioning
+output_paths <- save_outputs(plot = p, table = tbl, basename = "mtcars_report", plot_dir = "Testing/Figs", table_dir = "Results",
+                             plot_formats = c("pdf"), table_formats = c("rds"), overwrite = FALSE)
+
+rm(p, tbl, plot_paths, table_paths, output_paths)
+
+# Test if we can load an existing table instead of overwriting it
+save_or_load_table("tbl", basename = "mtcars_report", dir = "Results", formats = c("rds"), overwrite = FALSE, load_if_exists = TRUE)
+print(existing_table)
+```
+
+
+```{r}
+# r
+# Utility helpers to save ggplot/patchwork objects and tabular results consistently.
+# - save_plot(): saves ggplot/patchwork objects to one or more formats (pdf/png/svg).
+# - save_or_load_table(): saves data.frames/tibbles to csv and/or rds.
+# - save_outputs(): convenience wrapper to save both a plot and a table at once.
+# Returns invisibly a named list of saved paths.
+
+# R
+safe_load_or_create <- function(file, create_fn, read_fn = readRDS, save_fn = saveRDS,
+                                version = c("none","timestamp","increment"), overwrite = FALSE) {
+  version <- match.arg(version)
+  dir <- dirname(file)
+  if (!dir.exists(dir)) dir.create(dir, recursive = TRUE)
+  if (file.exists(file) && !overwrite) {
+    return(read_fn(file))
+  }
+  obj <- create_fn()
+  if (is.null(obj)) stop("create_fn returned NULL")
+  target <- file
+  if (file.exists(file) && version != "none") {
+    base <- tools::file_path_sans_ext(basename(file)); ext <- tools::file_ext(file)
+    if (version == "timestamp") target <- file.path(dir, paste0(base, "_", format(Sys.time(), "%Y%m%dT%H%M%S"), ".", ext))
+    else if (version == "increment") {
+      existing <- list.files(dir, pattern = paste0("^", base, "_v\\d+\\.", ext, "$"))
+      v <- if (length(existing)) max(as.integer(gsub(paste0("^", base, "_v(\\d+)\\.", ext, "$"), "\\1", existing)), na.rm = TRUE) + 1L else 1L
+      target <- file.path(dir, paste0(base, "_v", v, ".", ext))
+    }
+  }
+  tmp <- paste0(target, ".tmp")
+  save_fn(obj, file = tmp)
+  file.rename(tmp, target)
+  attr(obj, "saved_to") <- normalizePath(target)
+  obj
+}
+
+safe_filename <- function(dir, basename, ext, overwrite = FALSE) {
+  dir <- as.character(dir)
+  if (!dir.exists(dir)) dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+  basename <- sub("\\.[A-Za-z0-9]+$", "", basename) # remove ext if accidentally provided
+  path <- file.path(dir, paste0(basename, ".", ext))
+  if (!overwrite && file.exists(path)) {
+    ts <- format(Sys.time(), "%Y%m%d_%H%M%S")
+    path <- file.path(dir, paste0(basename, "_", ts, ".", ext))
+  }
+  path
+}
+
+save_plot <- function(plot, basename,
+                      dir = if (exists("dirPlots")) dirPlots else "Figs",
+                      formats = c("pdf", "png"),
+                      width = 8, height = 6, units = "in", dpi = 300,
+                      overwrite = FALSE, ...) {
+  if (is.null(plot)) stop("plot is NULL")
+  saved <- list()
+  for (fmt in formats) {
+    path <- safe_filename(dir, basename, fmt, overwrite = overwrite)
+    # use ggplot2::ggsave which supports ggplot/patchwork objects
+    ggplot2::ggsave(filename = path, plot = plot, width = width, height = height,
+                    units = units, dpi = dpi, device = fmt, ...)
+    saved[[fmt]] <- path
+  }
+  invisible(saved)
+}
+
+save_or_load_table <- function(tbl, basename,
+                       dir = if (exists("dirresults")) dirresults else "Results",
+                       formats = c("csv", "rds"),
+                       overwrite = FALSE, csv_opts = list()) {
+  if (!is.data.frame(tbl) && !tibble::is_tibble(tbl)) stop("tbl must be a data.frame or tibble")
+  saved <- list()
+  for (fmt in formats) {
+    path <- safe_filename(dir, basename, fmt, overwrite = overwrite)
+    if (fmt == "csv") {
+      # pass additional options via csv_opts (e.g. na = "", delim = "\t")
+      do.call(readr::write_csv, c(list(x = tbl, file = path), csv_opts))
+    } else if (fmt == "tsv") {
+      do.call(readr::write_tsv, c(list(x = tbl, file = path), csv_opts))
+    } else if (fmt == "rds") {
+      saveRDS(tbl, file = path)
+    } else {
+      stop("unsupported table format: ", fmt)
+    }
+    saved[[fmt]] <- path
+  }
+  invisible(saved)
+}
+
+save_outputs <- function(plot = NULL, table = NULL, basename,
+                         plot_dir = if (exists("dirPlots")) dirPlots else "Figs",
+                         table_dir = if (exists("dirresults")) dirresults else "Results",
+                         plot_formats = c("pdf", "png"), table_formats = c("csv", "rds"),
+                         overwrite = FALSE, plot_args = list(), table_args = list()) {
+  results <- list()
+  if (!is.null(plot)) {
+    results$plots <- do.call(save_plot, c(list(plot = plot, basename = basename, dir = plot_dir,
+                                                formats = plot_formats, overwrite = overwrite), plot_args))
+  }
+  if (!is.null(table)) {
+    results$tables <- do.call(save_or_load_table, c(list(tbl = table, basename = basename, dir = table_dir,
+                                                 formats = table_formats, overwrite = overwrite), table_args))
+  }
+  invisible(results)
+}
+
+# Example usage:
+# p <- ggplot(mtcars, aes(mpg, wt)) + geom_point()
+# tbl <- mtcars %>% tibble::rownames_to_column("model")
+# save_plot(p, "mtcars_scatter", dir = "Figs/figures", formats = c("pdf","png"))
+# save_or_load_table(tbl, "mtcars_table", dir = "Results/tables", formats = c("csv","rds"))
+# save_outputs(plot = p, table = tbl, basename = "mtcars_report")
+```
