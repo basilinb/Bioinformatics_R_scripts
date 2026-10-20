@@ -23,7 +23,7 @@ Individual function documentation lives in [`docs/`](docs/).
 | Function | File | Description | Docs |
 |----------|------|-------------|------|
 | `GAMLoop` | `GAMLoop.R` | Fit a GAM per gene or module; returns fixed effects, smooth effects, model objects | [docs](docs/GAMLoop.md) |
-| `runLmerLoop` | `runLmerLoop.R` | Fit `lmer` (or `lm`) per gene/module; returns coefficient table + model objects | [docs](docs/runLmerLoop.md) |
+| `runLmerLoop` | `runLmerLoop.R` | Fit `lmer` (or `lm`) per gene/module from a long df or voom object; matrix lm for all genes at once, optional parallel lmer; returns BH-corrected coefficient table (+ model objects) | [docs](docs/runLmerLoop.md) |
 | `predictGamValues` | `predictGamValues.R` | Predict fitted values from GAM objects, excluding specified terms (e.g. random effects) | [docs](docs/predictGamValues.md) |
 | `GAM_loop` | `GAM_loop.R` | *(Deprecated — use `GAMLoop` instead)* Older GAM loop version | — |
 
